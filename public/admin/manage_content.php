@@ -6,7 +6,7 @@
  require_once ("../../includes/functions.php");
 ?>
 
-<?php  if(!$session->is_logged_in()){redirect_to("login.php"); } ?>
+<?php  if(!$session->is_logged_in()){redirect_to("../login.php"); } ?>
 <?php include("../layouts/admin_header.php"); ?>
 <div id="main">
 <div id="navigation">

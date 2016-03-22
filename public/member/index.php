@@ -6,7 +6,7 @@ require_once ("../../includes/functions.php");
 ?>
 <?php include("../layouts/member_header.php"); ?>
 <?php  if(!$session->is_logged_in()){redirect_to("../login.php");} ?>
-<?php  $member = Member::find_by_id($session->user_id);  ?>
+<?php  $member = Member::find_by_id($session->find_id());  ?>
     <div id="navigation">
         <?php include("../../includes/member_navigation.php");?>
     </div>

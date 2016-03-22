@@ -2,18 +2,16 @@
 /*
  * A class to help work with Sessions
  * In our case, primarily to manage ligging in & out
- *
- * keep in mind when you working with session that it is generally
- * inadvisable to store DB-related objects in sessions, you can store the id of an object
- * and then go and look in the databse for it, but not the whole object
- * the reason is because the object info can be updated by other users, then your session will have
- * an old version of the object
- *
- * */
+ */
+
+require_once("member.php");
+require_once("admin.php");
 class Session{
 
-    private $logged_in = false;
-    public $user_id;
+    private $member_logged_in = false;
+    private $admin_logged_in = false;
+    public $admin_id;
+    public $member_id;
     public $message;
 
     function __construct()
@@ -21,42 +19,68 @@ class Session{
         session_start();
         $this->check_message();
         $this->check_login();
-        if($this->logged_in){
-            // do a certain action right away if user logged in, not redirecting, don't be falled by that
-        }else{
-            // actions to take care if a user not logged in
-        }
+
 
     }
 
     public function is_logged_in(){
-        return $this->logged_in;
+        if($this->member_id != 0) return $this->member_logged_in;
+        elseif($this->admin_id != 0) return $this->admin_logged_in;
+    }
+
+    public function find_id(){
+        if($this->member_logged_in){
+            return $this->member_id;
+        }elseif($this->admin_logged_in){
+            return $this->admin_id;
+        }else{
+            // Do nothing
+        }
     }
 
     public function login($user){
         // DB should find user based on username/password
         if($user){
-            $this->user_id = $_SESSION['user_id'] = $user->id;
+            if(is_a($user, "Member")){$this->member_id = $_SESSION['member_id'] = $user->id; $this->message("member"); }
+            elseif(is_a($user, "Admin")){ $this->admin_id = $_SESSION['admin_id'] = $user->id; $this->message("admin");}
+            else{
+                $this->member_id = 0;
+                $this->message("This is session class");
+            }
         }
     }
 
     public function logout(){
-        unset($_SESSION['user_id']);
-        unset($this->user_id);
-        $this->logged_in = false;
-    }
-
-    private function check_login(){
-        if(isset($_SESSION['user_id'])){
-            $this->user_id = $_SESSION['user_id'];
-            $this->logged_in = true;
+        if($this->member_logged_in) {
+            unset($_SESSION['member_id']);
+            unset($this->member_id);
+            $this->member_logged_in = false;
+        }elseif($this->admin_logged_in){
+            unset($_SESSION['admin_id']);
+            unset($this->admin_id);
+            $this->admin_logged_in = false;
         }else{
-            unset($this->user_id);
-            $this->logged_in = false;
+            // Do nothing
+            $this->message("This is session class");
         }
     }
 
-    // passing parameter here is optional
+    private function check_login()
+    {
+        if (isset($_SESSION['member_id'])) {
+            $this->member_id = $_SESSION['member_id'];
+            $this->member_logged_in = true;
+        }elseif(isset($_SESSION['admin_id'])){
+            $this->admin_id = $_SESSION['admin_id'];
+            $this->admin_logged_in = true;
+        }else{
+            unset($this->member_id);
+            unset($this->admin_id);
+            $this->member_logged_in = false;
+            $this->admin_logged_in = false;
+        }
+    }
+
 
     private function check_message(){
     // Is there a message stored in the session?
@@ -71,10 +95,7 @@ class Session{
 
     public function message($msg=""){
         if(!empty($msg)){
-            // then this is "set message"
-            // make sure you understand why $this->message=$msg wouldn't work
-            // cuz this way we store it in a session, we have to make this assignment ourselves
-            // otherwise it is just an attribute in a class session, not in the real session
+            // write a message
             $_SESSION['message'] = $msg;
         }else{
             // then this is "get message"

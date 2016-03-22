@@ -5,7 +5,7 @@ require_once ("../../includes/session.php");
 require_once ("../../includes/functions.php");
 ?>
 <?php  if(!$session->is_logged_in()){redirect_to("../login.php");} ?>
-<?php  $member = Member::find_by_id($session->user_id);  ?>
+<?php  $member = Member::find_by_id($session->find_id());  ?>
 <?php
 if(isset($_POST["submit"])){
 

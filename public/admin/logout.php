@@ -7,7 +7,7 @@ require_once ("../../includes/functions.php");
 <?php
 if(!$session->is_logged_in()){
     // message to tell him that he is not logged in from the first place
-    redirect_to("login.php");
+    redirect_to("../login.php");
 }
 $session->logout();
 redirect_to("login.php");

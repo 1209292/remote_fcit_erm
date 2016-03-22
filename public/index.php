@@ -1,7 +1,6 @@
 <?php include("layouts/header.php"); ?>
         <div id="navigation">
-            <br />
-            <a href="login.php"><strong>Login</strong></a>
+            <?php include("../includes/public_navigation.php"); ?>
         </div>
         <div id="page">
 
