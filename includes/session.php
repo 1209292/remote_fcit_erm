@@ -19,8 +19,6 @@ class Session{
         session_start();
         $this->check_message();
         $this->check_login();
-
-
     }
 
     public function is_logged_in(){
@@ -41,10 +39,11 @@ class Session{
     public function login($user){
         // DB should find user based on username/password
         if($user){
-            if(is_a($user, "Member")){$this->member_id = $_SESSION['member_id'] = $user->id; $this->message("member"); }
-            elseif(is_a($user, "Admin")){ $this->admin_id = $_SESSION['admin_id'] = $user->id; $this->message("admin");}
+            if(is_a($user, "Member")){$this->member_id = $_SESSION['member_id'] = $user->id;  }
+            elseif(is_a($user, "Admin")){ $this->admin_id = $_SESSION['admin_id'] = $user->id;}
             else{
                 $this->member_id = 0;
+                $this->admin_id = 0;
                 $this->message("This is session class");
             }
         }

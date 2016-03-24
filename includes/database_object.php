@@ -48,35 +48,42 @@ require_once ("database.php");
          $sql .= " WHERE id = '{$id}'";
          $sql .= " AND password = '{$password}'";
          $sql .= " LIMIT 1";
-
+         var_dump($sql);
          $result_array = static::find_by_sql($sql);
          return !empty($result_array)? array_shift($result_array) : false;
     }
 
-    private static function instantiate($record){
-        // it is good to check $record exists and is an array
+      private static function instantiate($record){
+          // it is good to check $record exists and is an array
 
-        // this is a simple, long form approach to assign values
-        $object = new static;
-        $object->id         = $record['id'];
-        $object->password   = $record['password'];
-        $object->first_name = $record['first_name'];
-        $object->last_name  = $record['last_name'];
-        $object->image_file  = $record['image_file'];
-        $object->email  = $record['email'];
-        $object->description  = $record['description'];
+          // this is a simple, long form approach to assign values
+          $object = new static;
+          $attributes = array();
+//        $object->id         = $record['id'];
+//        $object->password   = $record['password'];
+//        $object->first_name = $record['first_name'];
+//        $object->last_name  = $record['last_name'];
+//        $object->image_file  = $record['image_file'];
+//        $object->email  = $record['email'];
+//        $object->description  = $record['description'];
 
 
-        // more dynamic, short form approach to assign values
-//        foreach($record as $attribute => $value){
-//            /* maybe the record in the DB has some extra fields that doesn't exists in the class
-//             so we do extra check */
-//            if($object->has_attribute($attribute)){
-//                $object->$attribute = $value;
-//            }
-//        }
-        return $object;
-    }
+          // more dynamic, short form approach to assign values
+          // using this class we can get public attributes
+          $reflection = new ReflectionObject($object);
+          $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
+          foreach($properties as $property){
+              if($property->getName() == 'errors')
+                  continue;
+              $attributes[] = $property->getName();
+          }
+          foreach($record as $attribute => $value){
+              if(in_array($attribute, $attributes)){
+                  $object->$attribute = $record[$attribute];
+              }
+          }
+          return $object;
+      }
 
     private function has_attribute($attribute){
         $db_fields = static::$db_fields;
@@ -94,15 +101,6 @@ require_once ("database.php");
           /*this will work for our purpose, but if we have a big DB with hundred fields how we can do that?
           we can use SQL statement (SHOW FIELDS FROM users) then we buld our associative array ...*/
       }
-
-    protected function attributes(){
-        // return an array of attribute keys and thier values
-        return get_object_vars($this);
-        /*get_object_vars() has two issues: 1- returns all the attributs that it has access to
-        (called from inside a class, then returs private and protected)
-        2- some attributes has no database fields, two reasons it is not good for our use
-        to solve these two issues we will create get_attributes();*/
-    }
 
     protected function get_sanitized_attributes(){
         global $database;
@@ -143,6 +141,7 @@ require_once ("database.php");
         $sql = "UPDATE ". static::$table_name ." SET ";
         $sql .= join(", ", $attribute_pairs);
         $sql .= " WHERE id=" . $database->escape_value($current_id);
+        var_dump($sql);
         $database->query($sql);
         return($database->affected_rows() == 1)? true : false;
 
@@ -225,9 +224,9 @@ require_once ("database.php");
       }
 
     public function save(){
-          // A new record won't have an id yet.
+          // first we check if it is update image or new image
           if(!empty($this->old_image) && $this->old_image != "" && !is_null($this->image_file)){
-              // really just to update the caption
+              // update the image
               if($this->update_image()){
                   return true;
               }
@@ -302,5 +301,34 @@ require_once ("database.php");
         return false;
       }
 
-}
+    public static function filterSearchKeys($query){
+          $query = trim(preg_replace("/(\s+)+/", " ", $query));
+          $words = array();
+          // expand this list with your words.
+          $list = array("in","it","a","the","of","or","I","you","he","me","us","they","she","to","but","that","this","those","then");
+          $c = 0;
+          foreach(explode(" ", $query) as $key){
+              if (in_array($key, $list)){
+                  continue;
+              }
+              $words[] = $key;
+              if ($c >= 15){
+                  break;
+              }
+              $c++;
+          }
+          return $words;
+      }
+
+    // limit words number of characters
+
+    public static function limitChars($query, $limit = 200){
+          return substr($query, 0,$limit);
+      }
+
+    public static function search($query){
+
+    }
+
+  }
 ?>

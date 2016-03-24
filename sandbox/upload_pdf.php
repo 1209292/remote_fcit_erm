@@ -10,7 +10,6 @@ echo "Hello";
 if(isset($_POST['submit'])){
     echo "Bello";
     if(empty($_FILES['file']) || !$_FILES['file'] || !is_array($_FILES['file'])){
-        echo "SALAM";
         echo "NO FILE  UPLOADED";
     }elseif($_FILES['file']['error'] != 0){
         echo $_FILES['file']['error'];

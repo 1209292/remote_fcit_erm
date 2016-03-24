@@ -6,12 +6,21 @@ require_once ("../includes/session.php");
 require_once ("../includes/functions.php");
 require_once ("../includes/admin.php");
 
-// if($session->is_logged_in()){redirect_to("manage_content.php"); }
+ if(isset($session->admin_id)){redirect_to("admin/manage_content.php"); }
+ if(isset($session->member_id)){redirect_to("member/index.php"); }
 
 if(isset($_POST["submit"])){ // form has been submitted
     $id = trim($_POST['id']);
     $password = trim($_POST['password']);
-
+//    function validate($id, $pass){
+//        $sql = "SELECT * FROM admin";
+//        $sql .= " WHERE id = '{$id}'";
+//        $sql .= " AND password = '{$pass}'";
+//        $sql .= " LIMIT 1";
+//        $con = mysqli_connect("localhost", "root","j","senior_project");
+//        $result = mysqli_query($con, $sql);
+//        if($result){ return $result ; }else { false;}
+//    }
     // check database to see if username/password exists
     $found_admin = Admin::authenticate($id, $password);
     $found_member = Member::authenticate($id, $password);
@@ -33,6 +42,7 @@ if(isset($_POST["submit"])){ // form has been submitted
 }
 
 ?>
+<?php //echo $_SESSION['info']; ?>
 <?php include("layouts/header.php"); ?>
 <div id="main">
     <div id="navigation">

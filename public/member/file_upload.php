@@ -20,7 +20,8 @@ require_once ("../../includes/upload.php");
 $message="";
 if(isset($_POST['submit'])){
     $file = new Upload();
-    $file->attach_file($_FILES['file_upload'], $member->id);
+    $caption = $_POST['caption'];
+    $file->attach_file_upload($_FILES['file_upload'], $member->id, $caption);
     if($file->save()){
         $session->message("Uploaded Successfully");
         redirect_to("uploads.php");

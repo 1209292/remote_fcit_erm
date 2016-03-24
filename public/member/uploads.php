@@ -29,10 +29,10 @@ require_once ("../../includes/upload.php");
              width="150"/> </p>
             <?php if($uploads != false){ ?>
 <?php foreach($uploads as $upload): ?>
-<?php       if(pathinfo($upload->filename, PATHINFO_EXTENSION) == "pdf") { ?>
-                <p title="file_name=<?php echo $upload->filename; ?>"><a href="uploads/pdf_viewer.php?file_name=<?php
-                echo htmlentities($upload->filename); ?>"> <?php  echo $upload->filename; ?></a></p>
-                <p><?php echo pathinfo($upload->filename, PATHINFO_EXTENSION); ?></p>
+                            <?php       if(pathinfo($upload->filename, PATHINFO_EXTENSION) == "pdf") { ?>
+                                <p title="file_name=<?php echo $upload->filename; ?>"><a href="uploads/pdf_viewer.php?file_name=<?php
+                                    echo htmlentities($upload->filename); ?>"> <?php  echo $upload->filename; ?></a></p>
+                                <p><?php echo pathinfo($upload->filename, PATHINFO_EXTENSION); ?></p>
 
 <?php       }elseif(pathinfo($upload->filename, PATHINFO_EXTENSION) == "doc"){ ?>
                 <p title="file_name=<?php echo $upload->filename; ?>"><a href="uploads/doc_viewer.php?file_name=<?php

@@ -8,8 +8,8 @@
  */
 
 require_once ("database.php");
-
-class Upload {
+require_once ("database_object.php");
+class Upload extends DatabaseObject{
 
     protected static $table_name = "uploads";
     protected static $db_fields = array('id', 'filename', 'type',
@@ -42,7 +42,7 @@ class Upload {
     }
 
     // Pass in $_FILES['uoloaded_file'] as an argument
-    public function attach_file($file, $member_id){
+    public function attach_file_upload($file, $member_id, $caption){
         // Perform error checking on the form parameters
         if(!$file || empty($file) || !is_array($file)){
             // error: nothing uploaded or wrong argument usage
@@ -65,6 +65,7 @@ class Upload {
             $this->filename = basename($file['name']);
             $this->type = $file['type'];
             $this->size = $file['size'];
+            $this->caption = $caption;
             $this->member_id = $member_id;
             // don't worry about saving to the database yet.
             return true;
@@ -72,11 +73,6 @@ class Upload {
     }
 
     public function save(){
-        // A new record won't have an id yet.
-        if(isset($this->id)){
-            // really just to update the caption
-            $this->update();
-        } else {
             // *** Make sure there are no errors
 
             // Can't save if there are pre-existing errors
@@ -113,7 +109,6 @@ class Upload {
                 $this->errors = "The file upload failed, propably due to incorrect permission
                 on the upload folder.";
             }
-        }
     }
 
     // you could remove the database entry first, then this one
@@ -122,14 +117,14 @@ class Upload {
     public function destroy(){
         // **first remove the database entry
         if($this->delete()){
-            // remove the file
+            // second: remove the file
             $target_path = "C:/wamp/www/fcit_erm/public/member/uploads/" . $this->filename;
             return unlink($target_path) ? true : false;
         }else{
             // database delete failed
             return false;
         }
-        //**second remove the file
+
 
     }
 
@@ -152,135 +147,17 @@ class Upload {
         }
     }
 
-    public function comments(){
-        return Comment::find_comments_on($this->id);
-    }
-
-    // Common DB methods, copied as it is from user class, if we had DatabaseObject created
-    // we could promote all these methods and inhirate them with no need to rewrite them again
-    public static function find_all_uploads(){
-        return self::find_by_sql("select * from " . self::$table_name);
-    }
-
     public static function find_uploads_by_member_id($id=0){
         global $database;
-        $result_array = self::find_by_sql("SELECT * FROM ". self::$table_name ." WHERE member_id =
+        $result_array = static::find_by_sql("SELECT * FROM ". static::$table_name ." WHERE member_id =
         {$database->escape_value($id)}");
         // if $result_array empty, then return false, else get the item out of $result_array and return it
         return !empty($result_array)? $result_array : false;
     }
 
-    public static function find_by_sql($sql=""){
+    public function update($id){
         global $database;
-        $result_set = $database->query($sql);
-        $object_array = array();
-        while($row = $database->fetch_array($result_set)){
-            $object_array[] = self::instantiate($row);
-        }
-        return $object_array;
-    }
-
-    public static function count_all(){
-        global $database;
-        $sql= "SELECT COUNT(*) FROM " .self::$table_name;
-        /* find_by_sql isn't gonna work for us cuz it does instantiate & return object
-        we don't want that, we just want the count, so we're gonna run the query using $database*/
-        $result_set = $database->query($sql);
-        /* the query will return a record even though it was a single value, so we need to fetch
-        // the first row from the $result_ser*/
-        $row = $database->fetch_array($result_set);
-        /* even though the record has a single value, but we need to pull it out since it
-        // is the first value in the record*/
-        return array_shift($row);
-
-    }
-
-    private static function instantiate($record){
-        // it is good to check $record exists and is an array
-
-        // this is a simple, long form approach to assign values
-        $object = new self;
-//        $object->id         = $record['id'];
-//        $object->username   = $record['username'];
-//        $object->password   = $record['password'];
-//        $object->first_name = $record['first_name'];
-//        $object->last_name  = $record['last_name'];
-
-
-        // more dynamic, short form approach to assign values
-        foreach($record as $attribute => $value){
-            /* maybe the record in the DB has some extra fields that doesn't exists in the class
-             so we do extra check */
-            if($object->has_attribute($attribute)){
-                $object->$attribute = $value;
-            }
-        }
-        return $object;
-    }
-
-    private function has_attribute($attribute){
-        $object_vars = get_object_vars($this);
-        return array_key_exists($attribute, $object_vars);
-    }
-
-    protected function attributes(){
-        // return an array of attribute keys and thier values
-        return get_object_vars($this);
-        /*get_object_vars() has two issues: 1- returns all the attributs that it has access to
-        (called from inside a class, then returs private and protected)
-        2- some attributes has no database fields, two reasons it is not good for our use
-        to solve these two issues we will create get_attributes();*/
-    }
-
-    protected function get_attributes(){
-        $attributes = array();
-        foreach(self::$db_fields as $field){
-            if(property_exists($this, $field)){
-                $attributes[$field] = $this->$field; // $this->$field; field here is dynamic, don't let that confuse you
-            }
-        }
-        return $attributes;
-        /*this will work for our purpose, but if we have a big DB with hundred fields how we can do that?
-        we can use SQL statement (SHOW FIELDS FROM users) then we buld our associative array ...*/
-    }
-
-    protected function sanitized_attributes(){
-        global $database;
-        //$attributes = get_object_vars($this);
-        $cleaned_attributes = array();
-        foreach($this->get_attributes() as $key => $value){
-            $cleaned_attributes[$key] = $database->escape_value($value);
-        }
-        return $cleaned_attributes;
-    }
-
-    public function create(){
-        global $database;
-        $attributes = $this->sanitized_attributes();
-
-        // don't forget sql syntax and good habits:
-        // INSERT INTO table (key, key) VALUES ('value', 'value')
-        // single-quotes aroound all values
-        // escape all values to prevent SQL injection
-
-        $sql = "INSERT INTO ". self::$table_name . " (";
-        $sql .= join(", ", array_keys($attributes));
-        $sql .= ") VALUES ('";
-        $sql .= join("', '", array_values($attributes));
-        $sql .= "')";
-        if($database->query($sql)){
-            // we just inserted a record into DB, but we don't hava the id for this,
-            // so we get the id using insert_id() and we have everything about this object
-            $this->id = $database->insert_id();
-            return true;
-        }else{
-            return false;
-        }
-    }
-
-    protected function update(){
-        global $database;
-        $attributes = $this->sanitized_attributes();
+        $attributes = $this->get_sanitized_attributes();
         $attribute_pairs = array();
         foreach($attributes as $key => $value){
             $attribute_pairs[] = "{$key}='{$value}'";
@@ -301,5 +178,60 @@ class Upload {
         $database->query($sql);
         return($database->affected_rows() == 1)? true : false;
 
+    }
+
+    public static function search($query){
+
+        parent::search($query); // TODO: Change the autogenerated stub
+        global $database;
+        $query = trim($query);
+        if (mb_strlen($query)===0){
+            // no need for empty search right?
+            return false;
+        }
+
+        $query = static::limitChars($query);
+
+        // Weighing scores
+        $scoreFullTitle = 6;
+        $scoreTitleKeyword = 5;
+        $scoreFullSummary = 5;
+        $scoreSummaryKeyword = 4;
+
+
+        $keywords = static::filterSearchKeys($query);
+        $escQuery = $database->escape_value($query);
+        $filenameSQL = array();
+        $captionSQL = array();
+
+
+        /** Matching full occurences **/
+        if (count($keywords) > 1){
+            $filenameSQL[] = "if (filename LIKE '%".$escQuery."%',{$scoreFullTitle},0)";
+            $captionSQL[] = "if (caption LIKE '%".$escQuery."%',{$scoreFullSummary},0)";
+        }
+        /** Matching Keywords **/
+        foreach($keywords as $key){
+            $filenameSQL[] = "if (filename LIKE '%".$database->escape_value($key)."%',{$scoreTitleKeyword},0)";
+            $captionSQL[] = "if (caption LIKE '%".$database->escape_value($key)."%',{$scoreSummaryKeyword},0)";
+        }
+
+        $sql = "SELECT *,
+            (
+                (-- Title score
+                ".implode(" + ", $filenameSQL)."
+                )+
+                (-- Summary
+                ".implode(" + ", $captionSQL)."
+                )
+            ) as relevance
+            FROM uploads
+            HAVING relevance > 0
+            order by relevance Desc";
+        $results = static::find_by_sql($sql);
+        if (count($results) <= 0){
+            return false;
+        }
+        return $results;
     }
 }
