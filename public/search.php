@@ -3,10 +3,12 @@ require_once ("../includes/database.php");
 require_once ("../includes/member.php");
 require_once ("../includes/session.php");
 require_once ("../includes/functions.php");
+require_once ("../includes/publication.php");
 
 $search_done = false;
 $upload_search_done = false;
 $member_search_done = false;
+$public_search_done = false;
 
 if(isset($_POST['submit'])){
 
@@ -15,18 +17,21 @@ if(isset($_POST['submit'])){
     else{
         $upload_set = Upload::search($search_words);
         $member_set = Member::search($search_words);
-        if(count($member_set) > 0 || count($upload_set) > 0) {
+        $public_set = Publication::search($search_words);
+        if($member_set || $upload_set || $public_set) {
             $search_done = true ;
             if($member_set) {$member_search_done = true;}
             if($upload_set) {$upload_search_done = true;}
+            if($public_set) {$public_search_done = true;}
         }
     }
 }
 ?>
 
+
+<?php include ("layouts/header.php"); ?>
 <!-- search is not done yet, or search is done and some result was found,
   in the second case we dont want the search box to appear -->
-<?php include ("layouts/header.php"); ?>
 <?php if(!$search_done){
 echo $message
 ?>
@@ -65,6 +70,11 @@ echo $message
                     echo "<p><a href='member/uploads/$upload->filename '> $upload->filename </a> ";
                     echo "Author Name: " . $member->first_name . " " . $member->last_name . "</p>";
                 endforeach;
+            }
+            if($public_search_done){
+                foreach($public_set as $public):
+                    echo "<a href='$public->url' onclick='$public->increment_hits()'> $public->title <a/>";
+                    endforeach;
             }
         }
 

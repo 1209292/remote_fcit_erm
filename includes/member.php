@@ -45,7 +45,6 @@ class Member extends DatabaseObject
         $sql = "UPDATE ". static::$table_name ." SET ";
         $sql .= join(", ", $attribute_pairs);
         $sql .= " WHERE id=" . $database->escape_value($current_id);
-        var_dump($sql);
         $database->query($sql);
         return($database->affected_rows() == 1)? true : false;
 

@@ -67,17 +67,7 @@ class Publication {
         // this is a simple, long form approach to assign values
         $object = new static;
         $attributes = array();
-//        $object->id         = $record['id'];
-//        $object->password   = $record['password'];
-//        $object->first_name = $record['first_name'];
-//        $object->last_name  = $record['last_name'];
-//        $object->image_file  = $record['image_file'];
-//        $object->email  = $record['email'];
-//        $object->description  = $record['description'];
 
-
-        // more dynamic, short form approach to assign values
-        // using this class we can get public attributes
         $reflection = new ReflectionObject($object);
         $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
         foreach($properties as $property){
@@ -144,7 +134,6 @@ class Publication {
         $sql = "UPDATE ". static::$table_name ." SET ";
         $sql .= join(", ", $attribute_pairs);
         $sql .= " WHERE id=" . $database->escape_value($current_id);
-        var_dump($sql);
         $database->query($sql);
         return($database->affected_rows() == 1)? true : false;
 
@@ -207,6 +196,98 @@ class Publication {
     }
 }
 
+    public static function filterSearchKeys($query){
+        $query = trim(preg_replace("/(\s+)+/", " ", $query));
+        $words = array();
+        // expand this list with your words.
+        $list = array("in","it","a","the","of","or","I","you","he","me","us","they","she","to","but","that","this","those","then");
+        $c = 0;
+        foreach(explode(" ", $query) as $key){
+            if (in_array($key, $list)){
+                continue;
+            }
+            $words[] = $key;
+            if ($c >= 15){
+                break;
+            }
+            $c++;
+        }
+        return $words;
+    }
+
+    // limit words number of characters
+
+    public static function limitChars($query, $limit = 200){
+        return substr($query, 0,$limit);
+    }
+
+    public static function search($query){
+
+        global $database;
+        $query = trim($query);
+        if (mb_strlen($query)===0){
+            // no need for empty search right?
+            return false;
+        }
+
+        $query = static::limitChars($query);
+
+        // Weighing scores
+        $scoreFullTitle = 6;
+        $scoreTitleKeyword = 5;
+        $scoreFullSummary = 5;
+        $scoreSummaryKeyword = 4;
+
+
+        $keywords = static::filterSearchKeys($query);
+        $escQuery = $database->escape_value($query);
+        $keys = array();
+        $last_name = array();
+
+        /** Matching full occurences **/
+        if (count($keywords) > 1){
+            $keys[] = "if (keywords LIKE '%".$escQuery."%',{$scoreFullTitle},0)";
+//            $last_name[] = "if (last_name LIKE '%".$escQuery."%',{$scoreFullSummary},0)";
+        }
+        /** Matching Keywords **/
+        foreach($keywords as $key){
+            $keys[] = "if (keywords LIKE '%".$database->escape_value($key)."%',{$scoreTitleKeyword},0)";
+//            $last_name[] = "if (last_name LIKE '%".$database->escape_value($key)."%',{$scoreSummaryKeyword},0)";
+        }
+
+        $sql = "SELECT *,
+            (
+                (-- Title score
+                ".implode(" + ", $keys)."
+                )
+            ) as relevance
+            FROM publications
+            HAVING relevance > 0
+            order by relevance Desc";
+        $results = static::find_by_sql($sql);
+        if (count($results) <= 0){
+            return false;
+        }
+        return $results;
+    }
+
+    public function increment_hits(){
+
+    global $database;
+    $sql = "UPDATE " . static::$table_name;
+    $sql .= " SET hits=" .$this->hits++;
+    $sql .= " WHERE id=" . $this->id;
+    $database->query($sql);
+    return($database->affected_rows() == 1)? true : false;
+
+
+
+
+
+
+}
+
 
 }
 ?>
+
