@@ -33,20 +33,12 @@ if(isset($_POST['submit'])){
 <?php include("../layouts/member_header.php"); ?>
 
 <div id="navigation">
-    <br />
-    <a href="index.php"><strong><p>Home</p></strong></a>
-    <a href="manage_account.php"><strong><p>Manage Account</p></strong></a>
-    <a href="index.php"><strong><p>Publications</p></strong></a>
-    <a href="uploads.php"><strong><p>Uploads</p></strong></a>
-    <a href="index.php"><strong><p>STAT</p></strong></a>
-    <a href="../logout.php"><strong><p>Logout</p></strong></a>
+    <?php include("../../includes/member_navigation.php"); ?>
 </div>
 
 <div id="page">
     <?php echo $message; ?>
     <?php echo $session->message();?>
-    <p> Hint: Accepted Files allowed is ('pdf' 'doc' 'docx' 'ppt' 'pptx'), else
-    will not be uploaded. <br /> Max File size is 1M. </p>
     <form action = "<?php $_SERVER['PHP_SELF']; ?>" enctype="multipart/form-data" method="POST">
 
         <input type="hidden" name="MAX_FILE_SIZE" value="<?echo $max_file_size; ?>"

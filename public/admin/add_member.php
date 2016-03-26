@@ -17,27 +17,27 @@ if(isset($_POST["submit"])){
         $password =  $database->escape_value($_POST["password"]);
         $discription = $database->escape_value($_POST["discription"]);
 
-
-
-
-
         $new_member = Member::construct_with_args($id, $password, $first_name, $last_name);
-
         $required_fields = array('password', 'id', 'first_name', 'last_name');
         $max_length = array("first_name" => 10, "last_name" => 10, "id" => 9);
         $min_length = array("first_name" => 3, "last_name" => 3, "id" => 5);
         $new_member->validate($required_fields, $max_length, $min_length);
         $new_member->validate_password($password);
-
-
         if(!empty($new_member->errors)){
             $message = join("<br />", $new_member->errors);
         }else {
-
             $result = $new_member->create();
-
+            $assets_folders = $new_member->create_assets($id);
             if ($result) {
-                $session->message("Insertion Succeed");
+                if(!$assets_folders['images'] && $assets_folders['uploads']) {
+                    $session->message("Insertion Succeed BUT there was an error on creating image folder");
+                }elseif(!$assets_folders['uploads'] && $assets_folders['images']) {
+                    $session->message("Insertion Succeed BUT there was an error on creating upload folder");
+                }elseif(!$assets_folders['uploads'] && !$assets_folders['images']){
+                    $session->message("Insertion Succeed BUT there was an error on creating image and upload folders");
+                }else{
+                    $session->message("Insertion Succeed");
+                }
                 redirect_to("manage_content.php?members=1");
             } else {
                 $session->message("Insertion Succeed");

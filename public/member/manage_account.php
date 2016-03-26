@@ -68,7 +68,7 @@ if(isset($_POST['upload_image'])){
 
         </form>
 
-        <img src="../images/<?php echo $member->image_file?>" alt="NOTHING"
+        <img src="../images/<?php echo $member->id ."/". $member->image_file?>" alt="NOTHING"
              width="150" />
     </span>
         <hr />

@@ -20,7 +20,6 @@ class Upload extends DatabaseObject{
     public $size;
     public $caption;
     public $member_id;
-    protected static $accepted_extentions = array('pdf','doc','docx','ppt','pptx');
     private $temp_path;
     protected $upload_dir="../uploads";
     public $errors=array(); // as we upload, save, move photos we can keep track and catalog the errors
@@ -52,14 +51,7 @@ class Upload extends DatabaseObject{
             // error: report what PHP says went wrong
             $this->errors[] = $this->upload_errors[$file['error']];
             return false;
-        }elseif (empty($member_id) || $member_id === "") {
-            $this->errors[] = "Member id was not provided.";
-            return false;
-        }elseif(!in_array(pathinfo($file['name'], PATHINFO_EXTENSION), self::$accepted_extentions)){
-            $this->errors[] = "Extention is not Accepted.";
-            return false;
-        }
-        else{
+        }else{
             // Set object attributes to the form parameters.
             $this->temp_path = $file['tmp_name'];
             $this->filename = basename($file['name']);
@@ -88,15 +80,23 @@ class Upload extends DatabaseObject{
                 return false;
             }
             // Determine the target path
-            $terget_path = "C:/wamp/www/fcit_erm/public/member/uploads/" . $this->filename;
+            $target_path = "C:/wamp/www/fcit_erm/public/uploads/" .
+                $this->member_id ."/";
+            if(!file_exists($target_path)){
+                /* check if folder of the member exists or not, we can not upload
+                // if the folder does not exists*/
+                $this->errors[] = "The folder to upload does not exists.";
+                return false;
+            }
+            $target_path .= $this->filename;
             // Make sure the file is not already exists in  the target location
-            if(file_exists($terget_path)){
+            if(file_exists($target_path)){
                 $this->errors[] = "The file {$this->filename} already exists.";
                 return false;
             }
             // *** attemt to move the file
 
-            if(move_uploaded_file($this->temp_path, $terget_path)){
+            if(move_uploaded_file($this->temp_path, $target_path)){
                 //Success
                 // Save a corresponding entry to the database
                 if($this->create()){
@@ -111,19 +111,14 @@ class Upload extends DatabaseObject{
             }
     }
 
-    // you could remove the database entry first, then this one
-    // but if we removed the databse first, even if the file still setting there, but it will
-    // not be longer in the website
+
+    /* this method will do the second step of deleting which is deleting
+        the physical file from the machine */
     public function destroy(){
-        // **first remove the database entry
-        if($this->delete()){
-            // second: remove the file
-            $target_path = "C:/wamp/www/fcit_erm/public/member/uploads/" . $this->filename;
+            $target_path = "C:/wamp/www/fcit_erm/public/uploads/" .
+                $this->member_id . "/" . $this->filename;
             return unlink($target_path) ? true : false;
-        }else{
-            // database delete failed
-            return false;
-        }
+
 
 
     }

@@ -26,7 +26,7 @@ class Member extends DatabaseObject
     );
     public static function construct_with_args($id, $password, $first_name, $last_name)
     {
-        $object = new self;
+        $object = new static;
         $object->first_name = $first_name;
         $object->last_name = $last_name;
         $object->password = $password;
@@ -104,6 +104,29 @@ class Member extends DatabaseObject
         return $results;
 
 
+    }
+
+    public function create_assets($id)
+    {
+        $paths = array();
+        $create_checks = array();
+        $paths['images'] = "C:/wamp/www/fcit_erm/public/images/";
+        $paths['uploads']= "C:/wamp/www/fcit_erm/public/uploads/";
+        foreach($paths as $index => $path){
+            if(file_exists($path . $id)){
+                $create_checks[$index] = false;
+            }else{
+                $create_checks[$index] = mkdir($path . $id);
+            }
+        }
+        return $create_checks;
+    }
+
+    public function destroy(){
+        // **This function remove the database entry
+            $target_path = $_SERVER['DOCUMENT_ROOT'] . "fcit_erm/public/images/" .
+                $this->id ."/" . $this->old_image;
+            return unlink($target_path) ? true : false;
     }
 }
 ?>

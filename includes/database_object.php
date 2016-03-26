@@ -1,5 +1,6 @@
 <?php
 require_once ("database.php");
+require_once ("session.php");
 
 
   class DatabaseObject {
@@ -53,7 +54,7 @@ require_once ("database.php");
          return !empty($result_array)? array_shift($result_array) : false;
     }
 
-      private static function instantiate($record){
+  private static function instantiate($record){
           // it is good to check $record exists and is an array
 
           // this is a simple, long form approach to assign values
@@ -225,15 +226,16 @@ require_once ("database.php");
 
     public function save(){
           // first we check if it is update image or new image
-          if(!empty($this->old_image) && $this->old_image != "" && !is_null($this->image_file)){
-              // update the image
-              if($this->update_image()){
-                  return true;
-              }
-              else{
-                  $this->errors[] = "Your image could not be uploaded";
-              }
-          } else {
+//          if(!empty($this->old_image) && $this->old_image != ""){
+//              // update the image
+//              if($this->update_image()){
+//                  return true;
+//              }
+//              else{
+//                  $this->errors[] = "Your image could not be updated, propably your folder does not exists, or Database error";
+//              }
+//          }
+
               // *** Make sure there are no errors
 
               // Can't save if there are pre-existing errors
@@ -247,20 +249,38 @@ require_once ("database.php");
                   return false;
               }
               // Determine the target path
-              $terget_path = "C:/wamp/www/fcit_erm/public/images/" . $this->image_file;
+              $target_path = "C:/wamp/www/fcit_erm/public/images/"
+                  . $this->id ."/";
+              if(!file_exists($target_path)){
+                  /*Check if the folder to upload exists, if not that means
+                   * you can not upload */
+                  $this->errors[] = "The folder to upload does not exists.";
+                  return false;
+              }
+              $target_path .= $this->image_file;
               // Make sure the file is not already exists in  the target location
-              if (file_exists($terget_path)) {
+              if (file_exists($target_path)) {
                   $this->errors[] = "The file {$this->image_file} already exists.";
                   return false;
               }
               // *** attemt to move the file
-              if (move_uploaded_file($this->temp_path, $terget_path)) {
+
+              if (move_uploaded_file($this->temp_path, $target_path)) {
                   //Success
                   // Save a corresponding entry to the database
                   if ($this->create_image()) {
+                      $message = "The file was uploaded successfuly";
                       // we are done with temp_file, the file isn't there anymore
                       unset($this->temp_path);
+                      if(!$this->destroy()){
+                          global $session;
+                          $message .= ", But the phisical file could not be deleted";
+                          $session->message($message);
+                      }
                       return true;
+                  }else{
+                      $this->errors[] = "Could not update the database";
+                      return false;
                   }
               } else {
                   // Failure
@@ -268,7 +288,7 @@ require_once ("database.php");
                 on the upload folder.";
               }
           }
-      }
+
 
     public function create_image(){
         global $database;
@@ -276,8 +296,8 @@ require_once ("database.php");
         $sql .= " SET image_file = '" . $database->escape_value($this->image_file) . "'";
         $sql .= " WHERE id = " . $database->escape_value($this->id);
           if($database->query($sql)){
-              // we just inserted a record into DB, but we don't hava the id for this,
-              // so we get the id using insert_id() and we have everything about this object
+              /* we just inserted a record into DB, but we don't hava the id for this,
+              // so we get the id using insert_id() and we have everything about this object*/
 //              $this->id = $database->insert_id();
               return true;
           }else{
@@ -287,18 +307,28 @@ require_once ("database.php");
 
     protected function update_image(){
           global $database;
-
-          $target_file = "C:/wamp/www/fcit_erm/public/images/" . $this->old_image;
-          if(unlink($target_file)) {
-              $terget_path = "C:/wamp/www/fcit_erm/public/images/" . $this->image_file;
-              move_uploaded_file($this->temp_path, $terget_path);
-              $sql = "UPDATE " . static::$table_name;
-              $sql .= " SET image_file = '" . $database->escape_value($this->image_file) . "'";
-              $sql .= " WHERE id=" . $database->escape_value($this->id);
-              $database->query($sql);
-              return ($database->affected_rows() == 1) ? true : false;
-          }
-        return false;
+          //$target_file = "C:/wamp/www/fcit_erm/public/images/" . $this->old_image;
+              $terget_path = "C:/wamp/www/fcit_erm/public/images/" .
+                  $this->id . $this->image_file;
+              if(move_uploaded_file($this->temp_path, $terget_path)) {
+                  $sql = "UPDATE " . static::$table_name;
+                  $sql .= " SET image_file = '" . $database->escape_value($this->image_file) . "'";
+                  $sql .= " WHERE id=" . $database->escape_value($this->id);
+                  $database->query($sql);
+                  if ($database->affected_rows() == 1) {
+                      if (!$this->destroy()) {
+                          /*check $this->errors if any problem, */
+                          $this->errors[] = "the physical file could not be removed";
+                      }
+                      return true;
+                  } else {
+                      $this->errors[] = "Database could not be updated.";
+                      return false;
+                  }
+              }else{
+                  $this->errors = "The file upload failed, propably due wrong upload folder.";
+                  return false;
+              }
       }
 
     public static function filterSearchKeys($query){

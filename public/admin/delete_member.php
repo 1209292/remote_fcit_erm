@@ -10,11 +10,8 @@ require_once ("../../includes/functions.php");
 <?php 		
 
 			if($_GET["id"]){
-			
 			$member = $_SESSION["count" . $_GET["id"]];
-
-			$result = $member->delete();
-			
+			$result = $member->destroy($member->id);
 			if($result && $database->affected_rows() == 1){
 				$session->message("Deletion Succeed");
 				redirect_to("manage_content.php?members=1");

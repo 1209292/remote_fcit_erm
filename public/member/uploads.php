@@ -25,64 +25,21 @@ require_once ("../../includes/upload.php");
 <div id="page">
     <?php echo output_message($message); ?>
     <h2>Welcome <?php echo $member->first_name ." ".  $member->last_name ?></h2>
-    <p> <img src="../images/<?php echo $member->image_file; ?>" alt="NO IMAGE"
-             width="150"/> </p>
+    <p> <img src="../images/<?php echo $member->id ."/".$member->image_file; ?>"
+             alt="NO IMAGE" width="150"/> </p>
             <?php if($uploads != false){ ?>
-<?php foreach($uploads as $upload): ?>
-                            <?php       if(pathinfo($upload->filename, PATHINFO_EXTENSION) == "pdf") { ?>
-                                <p title="file_name=<?php echo $upload->filename; ?>"><a href="uploads/pdf_viewer.php?file_name=<?php
-                                    echo htmlentities($upload->filename); ?>"> <?php  echo $upload->filename; ?></a></p>
-                                <p><?php echo pathinfo($upload->filename, PATHINFO_EXTENSION); ?></p>
-
-<?php       }elseif(pathinfo($upload->filename, PATHINFO_EXTENSION) == "doc"){ ?>
-                <p title="file_name=<?php echo $upload->filename; ?>"><a href="uploads/doc_viewer.php?file_name=<?php
-                    echo htmlentities($upload->filename); ?>"> <?php  echo $upload->filename; ?></a></p>
-                <p><?php echo pathinfo($upload->filename, PATHINFO_EXTENSION); ?></p>
-
-<?php       }elseif(pathinfo($upload->filename, PATHINFO_EXTENSION) == "docx"){ ?>
-                <p title="file_name=<?php echo $upload->filename; ?>"><a href="uploads/docx_viewer.php?file_name=<?php
-                    echo htmlentities($upload->filename); ?>"> <?php  echo $upload->filename; ?></a></p>
-                <p><?php echo pathinfo($upload->filename, PATHINFO_EXTENSION); ?></p>
-
-<?php       }elseif(pathinfo($upload->filename, PATHINFO_EXTENSION) == "pptx"){?>
-                <p title="file_name=<?php echo $upload->filename; ?>"><a href="uploads/pptx_viewer.php?file_name=<?php
-                echo htmlentities($upload->filename); ?>"> <?php  echo $upload->filename; ?></a></p>
-                <p><?php echo pathinfo($upload->filename, PATHINFO_EXTENSION); ?></p>
-
-<?php       }elseif(pathinfo($upload->filename, PATHINFO_EXTENSION) == "ppt") { ?>
-                <p title="file_name=<?php echo $upload->filename; ?>"><a href="uploads/ppt_viewer.php?file_name=<?php
-                    echo htmlentities($upload->filename); ?>"> <?php  echo $upload->filename; ?></a></p>
-                <p><?php echo pathinfo($upload->filename, PATHINFO_EXTENSION); ?></p>
-
-<?php        }elseif(pathinfo($upload->filename, PATHINFO_EXTENSION) == "zip") {?><!-- zip upload not completed-->
-                <p title="file_name=<?php echo $upload->filename; ?>"><a href="uploads/zip_viewer.php?file_name=<?php
-                    echo htmlentities($upload->filename); ?>"> <?php  echo $upload->filename; ?></a></p>
-                <p><?php echo pathinfo($upload->filename, PATHINFO_EXTENSION); ?></p>
-<?php         }else{
-                    redirect_to("http://google.com");
-            }
-?>
+<?php   foreach($uploads as $upload): ?>
+                <p title="file_name=<?php echo $upload->filename; ?>"><a href="../uploads/<?php
+                    echo htmlentities($upload->member_id)
+                        ."/".$upload->filename; ?>"> <?php  echo $upload->filename; ?></a></p>
+                <p><a href="delete_upload.php?file_id=<?php echo $upload->id;?>"
+                    onclick="return confirm('Are you sure you want to delete this item?');"> Delete </a></p>
 <?php endforeach; ?>
-    <?php } // if carly braces ?>
+<?php       }else{
+                echo output_message("You have no uploads available!");
+            } // if curly brace ?>
 
-    <p><a href="file_upload.php">upload file</a></p>
+    <p><a href="file_upload.php">+ upload file</a></p>
 
 </div>
 <?php include("../layouts/member_footer.php"); ?>
-
-<?php
- // sql statement to create uploads table
-
-/*mysql> create table uploads (id int(11) not null auto_increment,
-    -> filename varchar(255) not null,
-    -> type varchar(100) not null,
-    -> size int(11) not null,
-    -> caption varchar(255),
-    -> member_id int(11) not null,
-    -> primary key (id),
-    -> foreign key (member_id) REFERENCES members (id));
-
-    index the foreing key for faster retrieval
-    alter table uploads add index (member_id);
-*/
-?>
