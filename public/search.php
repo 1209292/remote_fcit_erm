@@ -71,7 +71,7 @@ if(isset($_POST['submit'])){
             if($member_search_done){
                 echo "<span>";
                 foreach($member_set as $member):
-                    echo "<p><img src='images/$member->image_file' alt='No image' width='150'/>";
+                    echo "<p><img src='images/{$this->id}/{$member->image_file}' alt='No image' width='150'/>";
                     echo "<a href=''> $member->first_name  $member->last_name</a> ";
                 endforeach;
                 echo "<span>";

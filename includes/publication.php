@@ -11,6 +11,8 @@ class Publication {
     public $hits;
     public $keywords;
     public $date;
+    public $author;
+    public $citation;
 
     protected static $table_name = "publications";
     protected static $db_fields = array('id', 'title', 'website', 'url', 'hits',
@@ -30,7 +32,7 @@ class Publication {
      * @param int $id
      * @return bool|mixed
      */
-    public static function find_publication_by_member_id($id=0){
+    public static function find_publication_by_author($id=0){
         $result_array = static::find_by_sql("select * from ". static::$table_name ." where member_id ={$id}");
         // if $result_array empty, then return false, else get the item out of $result_array and return it
         return !empty($result_array)? $result_array : false;

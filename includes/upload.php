@@ -42,6 +42,9 @@ class Upload extends DatabaseObject{
 
     // Pass in $_FILES['uoloaded_file'] as an argument
     public function attach_file_upload($file, $member_id, $caption){
+        // if file already exists, ask either to replace, keep both or cancle.
+        if(check_existance($file, $member_id)){}
+
         // Perform error checking on the form parameters
         if(!$file || empty($file) || !is_array($file)){
             // error: nothing uploaded or wrong argument usage
@@ -142,6 +145,23 @@ class Upload extends DatabaseObject{
         }
     }
 
+// (not completed): checks if upload already exists, if so ask user to delete, replace or keep both
+    public function check_existance($file, $member_id){
+        global $database;
+        $sql = "SELECT * from " . Upload::$table_name;
+        $sql .= "WHERE member_id=" . $database->escape_value($member_id);
+        $upload_set = $database->query($sql);
+        // not solved: what if the query was not performed, or no result_set found
+
+        // first: check type, if no match --> second: check filename
+        foreach($upload_set as $upload) {
+            $upload = static::instantiate($upload);
+            if($file['type'] == $upload->type && $file['name'] == $upload->filename){
+                // Do something
+            }
+        }
+    }
+
     public static function find_uploads_by_member_id($id=0){
         global $database;
         $result_array = static::find_by_sql("SELECT * FROM ". static::$table_name ." WHERE member_id =
@@ -150,30 +170,20 @@ class Upload extends DatabaseObject{
         return !empty($result_array)? $result_array : false;
     }
 
-    public function update($id){
-        global $database;
-        $attributes = $this->get_sanitized_attributes();
-        $attribute_pairs = array();
-        foreach($attributes as $key => $value){
-            $attribute_pairs[] = "{$key}='{$value}'";
-        }
-        $sql = "UPDATE ". self::$table_name ." SET ";
-        $sql .= join(", ", $attribute_pairs);
-        $sql .= " WHERE id=" . $database->escape_value($this->id);
-        $database->query($sql);
-        return($database->affected_rows() == 1)? true : false;
-
-    }
-
-    public function delete(){
-        global $database;
-        $sql = "DELETE FROM " . self::$table_name;
-        $sql .= " WHERE id = " . $database->escape_value($this->id);
-        $sql .= " LIMIT 1";
-        $database->query($sql);
-        return($database->affected_rows() == 1)? true : false;
-
-    }
+//    public function update($id){
+//        global $database;
+//        $attributes = $this->get_sanitized_attributes();
+//        $attribute_pairs = array();
+//        foreach($attributes as $key => $value){
+//            $attribute_pairs[] = "{$key}='{$value}'";
+//        }
+//        $sql = "UPDATE ". self::$table_name ." SET ";
+//        $sql .= join(", ", $attribute_pairs);
+//        $sql .= " WHERE id=" . $database->escape_value($this->id);
+//        $database->query($sql);
+//        return($database->affected_rows() == 1)? true : false;
+//
+//    }
 
     public static function search($query){
 

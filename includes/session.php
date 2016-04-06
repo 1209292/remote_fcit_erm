@@ -13,6 +13,7 @@ class Session{
     public $admin_id;
     public $member_id;
     public $message;
+    public $member_use = null;
 
     function __construct()
     {
@@ -100,6 +101,16 @@ class Session{
             // then this is "get message"
             return $this->message;
         }
+    }
+
+    public function set_member_use($member_id){
+        $this->member_use = $member_id;
+    }
+
+    public function get_member_use(){
+        $member_id = $this->member_use;
+        unset($this->member_use);
+        return $member_id;
     }
 }
 

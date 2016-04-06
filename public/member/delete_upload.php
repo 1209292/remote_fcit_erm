@@ -13,7 +13,7 @@ require_once ("../../includes/functions.php");
 require_once ("../../includes/upload.php");
 ?>
 
-<?php  if(!$session->is_logged_in()){redirect_to("../login.php");} ?>
+<?php  if(!$session->is_logged_in()){redirect_to("../member_profile.php");} ?>
 <?php  $upload = Upload::find_by_id($_GET["file_id"]); ?>
 <?php  $id = $session->find_id(); ?>
 <?php include("../layouts/member_header.php"); ?>

@@ -4,7 +4,7 @@ require_once ("../../includes/member.php");
 require_once ("../../includes/session.php");
 require_once ("../../includes/functions.php");
 ?>
-<?php  if(!$session->is_logged_in()){redirect_to("../login.php");} ?>
+<?php  if(!$session->is_logged_in()){redirect_to("../member_profile.php");} ?>
 <?php  $member = Member::find_by_id($session->find_id());  ?>
 <?php
 if(isset($_POST["submit"])){

@@ -49,12 +49,11 @@ require_once ("session.php");
          $sql .= " WHERE id = '{$id}'";
          $sql .= " AND password = '{$password}'";
          $sql .= " LIMIT 1";
-         var_dump($sql);
          $result_array = static::find_by_sql($sql);
          return !empty($result_array)? array_shift($result_array) : false;
     }
 
-  private static function instantiate($record){
+    public static function instantiate($record){
           // it is good to check $record exists and is an array
 
           // this is a simple, long form approach to assign values
@@ -84,11 +83,6 @@ require_once ("session.php");
               }
           }
           return $object;
-      }
-
-    private function has_attribute($attribute){
-        $db_fields = static::$db_fields;
-          return array_key_exists($attribute, $db_fields);
       }
 
     protected function get_attributes(){
@@ -142,7 +136,6 @@ require_once ("session.php");
         $sql = "UPDATE ". static::$table_name ." SET ";
         $sql .= join(", ", $attribute_pairs);
         $sql .= " WHERE id=" . $database->escape_value($current_id);
-        var_dump($sql);
         $database->query($sql);
         return($database->affected_rows() == 1)? true : false;
 
@@ -289,7 +282,6 @@ require_once ("session.php");
               }
           }
 
-
     public function create_image(){
         global $database;
         $sql = "UPDATE " . static::$table_name ;
@@ -350,9 +342,8 @@ require_once ("session.php");
           return $words;
       }
 
-    // limit words number of characters
-
     public static function limitChars($query, $limit = 200){
+        // limit words number of characters
           return substr($query, 0,$limit);
       }
 

@@ -24,6 +24,11 @@ class Member extends DatabaseObject
         UPLOAD_ERR_CANT_WRITE   => "Can't write to disk.",
         UPLOAD_ERR_EXTENSION    => "File upload stopped by extension"
     );
+
+    function __construct()
+    {
+    }
+
     public static function construct_with_args($id, $password, $first_name, $last_name)
     {
         $object = new static;
@@ -34,21 +39,6 @@ class Member extends DatabaseObject
         return $object;
     }
     // We should update the uploads.member_id table first (member id is a forign key)
-    public function update($current_id){
-        global $database;
-        $attributes = $this->get_sanitized_attributes();
-        $attribute_pairs = array();
-        foreach($attributes as $key => $value){
-            if($key == 'id') { $attribute_pairs[] = "{$key}={$value}"; }
-            else { $attribute_pairs[] = "{$key}='{$value}'"; }
-        }
-        $sql = "UPDATE ". static::$table_name ." SET ";
-        $sql .= join(", ", $attribute_pairs);
-        $sql .= " WHERE id=" . $database->escape_value($current_id);
-        $database->query($sql);
-        return($database->affected_rows() == 1)? true : false;
-
-    }
 
     public static function search($query)
     {
@@ -122,8 +112,17 @@ class Member extends DatabaseObject
         return $create_checks;
     }
 
+    public function destroy_assets($id){
+
+        /*For now we going to delete uploads/$member_id folder only, until we see what
+        we do with images/$member_id folder*/
+        $images_path = $_SERVER['DOCUMENT_ROOT'] . "fcit_erm/public/images/" .
+            $id ."/";
+        return rmdir($images_path) ? true : false;
+    }
+
     public function destroy(){
-        // **This function remove the database entry
+        // **This function remove the physical file
             $target_path = $_SERVER['DOCUMENT_ROOT'] . "fcit_erm/public/images/" .
                 $this->id ."/" . $this->old_image;
             return unlink($target_path) ? true : false;

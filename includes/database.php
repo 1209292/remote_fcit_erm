@@ -77,11 +77,6 @@ class MySQLDatabase
         return mysqli_affected_rows($this->connection);
     }
 
-    function prepare($string)
-    {
-        return mysqli_real_escape_string($this, $string);
-    }
-
 }
 
 $database = new MySQLDatabase();

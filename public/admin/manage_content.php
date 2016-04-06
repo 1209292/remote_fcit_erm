@@ -7,7 +7,7 @@
  require_once ("../../includes/admin.php");
 ?>
 
-<?php  if(!$session->is_logged_in()){ redirect_to("../login.php"); } ?>
+<?php  if(!$session->is_logged_in()){ redirect_to("../member_profile.php"); } ?>
 <?php include("../layouts/admin_header.php"); ?>
 
 <div id="main">
@@ -25,17 +25,19 @@
         echo output_message($message);
 
         $members = Member::find_all();
-        if($members && Member::count_all() > 0){
-            $count = 1;
-            echo "<ul>";
-            foreach($members as $member){
-                $_SESSION["count".$count] = $member;
-                echo "Member name: " . $member->first_name
-                    . " " . $member->last_name . " "
-                    . "<a href=\"edit_member.php?id={$count}\">Edit member</a>" . "<br />" ;
-                $count++;
-            }
-        echo "</ul>";
+        if($members && count($members) > 0){
+            echo "<div>";
+            foreach($members as $member):?>
+
+                 <p><a href="member_profile.php?member_id=<?php echo $member->id ?>">
+                     <img src="../images/<?php echo $member->id ."/".$member->image_file ?>" alt="Member image"
+                     width='100'/><p>Member name:  <?php echo $member->first_name ." ".
+                     $member->last_name ?> </a>  <?php echo str_repeat('&nbsp', 10) ?>
+                     <a href="edit_member.php<?php $session->set_member_use($member->id); ?>">
+                     Edit member</a></p>
+            <?php
+            endforeach;
+        echo "</div>";
         echo "<p><a href=\"add_member.php\"> + Add member</a></p>";
         }else{
             echo "Error: No Records in members' table.";
@@ -44,14 +46,11 @@
         echo "<h2>Admins of FCIT</h2>";
         echo output_message($message);
         $admins = Admin::find_all();
-        if($admins && Admin::count_all() > 0){
-            $count = 1;
+        if($admins && count($admin) > 0){
             echo "<ul>";
             foreach($admins as $admin){
-                $_SESSION["count".$count] = $admin;
                 echo "Admin name: " . $admin->first_name
                     . " " . $admin->last_name . "<br />" ;
-                $count++;
             }
             echo "</ul>";
             echo "<p><a href=\"add_admin.php\"> + Add Admin</a></p>";
