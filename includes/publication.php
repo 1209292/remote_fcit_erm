@@ -1,18 +1,18 @@
 <?php
 
 
+require_once "database.php";
 
 class Publication {
 
     public $id;
     public $title;
-    public $website;
     public $url;
-    public $hits;
     public $keywords;
     public $date;
     public $author;
     public $citation;
+    public $hits;
 
     protected static $table_name = "publications";
     protected static $db_fields = array('id', 'title', 'website', 'url', 'hits',
@@ -151,52 +151,76 @@ class Publication {
 
     }
 
-    public function save(){
-    // first we check if it is update image or new image
-    if(!empty($this->old_image) && $this->old_image != "" && !is_null($this->image_file)){
-        // update the image
-        if($this->update_image()){
-            return true;
-        }
-        else{
-            $this->errors[] = "Your image could not be uploaded";
-        }
-    } else {
-        // *** Make sure there are no errors
+//    public function save(){
+//    // first we check if it is update image or new image
+//    if(!empty($this->old_image) && $this->old_image != "" && !is_null($this->image_file)){
+//        // update the image
+//        if($this->update_image()){
+//            return true;
+//        }
+//        else{
+//            $this->errors[] = "Your image could not be uploaded";
+//        }
+//    } else {
+//        // *** Make sure there are no errors
+//
+//        // Can't save if there are pre-existing errors
+//        if (!empty($this->errors)) {
+//            return false;
+//        }
+//
+//        // Can't save without the filename and temp location
+//        if (empty($this->image_file) || empty($this->temp_path)) {
+//            $this->errors[] = "The file location was not available.";
+//            return false;
+//        }
+//        // Determine the target path
+//        $terget_path = "C:/wamp/www/fcit_erm/public/images/" . $this->image_file;
+//        // Make sure the file is not already exists in  the target location
+//        if (file_exists($terget_path)) {
+//            $this->errors[] = "The file {$this->image_file} already exists.";
+//            return false;
+//        }
+//        // *** attemt to move the file
+//        if (move_uploaded_file($this->temp_path, $terget_path)) {
+//            //Success
+//            // Save a corresponding entry to the database
+//            if ($this->create_image()) {
+//                // we are done with temp_file, the file isn't there anymore
+//                unset($this->temp_path);
+//                return true;
+//            }
+//        } else {
+//            // Failure
+//            $this->errors = "The file upload failed, propably due to incorrect permission
+//                on the upload folder.";
+//        }
+//    }
+//}
 
-        // Can't save if there are pre-existing errors
-        if (!empty($this->errors)) {
-            return false;
-        }
-
-        // Can't save without the filename and temp location
-        if (empty($this->image_file) || empty($this->temp_path)) {
-            $this->errors[] = "The file location was not available.";
-            return false;
-        }
-        // Determine the target path
-        $terget_path = "C:/wamp/www/fcit_erm/public/images/" . $this->image_file;
-        // Make sure the file is not already exists in  the target location
-        if (file_exists($terget_path)) {
-            $this->errors[] = "The file {$this->image_file} already exists.";
-            return false;
-        }
-        // *** attemt to move the file
-        if (move_uploaded_file($this->temp_path, $terget_path)) {
-            //Success
-            // Save a corresponding entry to the database
-            if ($this->create_image()) {
-                // we are done with temp_file, the file isn't there anymore
-                unset($this->temp_path);
-                return true;
+    public static function save($scholar_pub, $member_id) { // recieves from Scholar_object
+        global $database;
+        foreach ($scholar_pub as $pub) {
+            $keywords = Publication::make_search_keys($pub->title);
+            $sql = "INSERT INTO " . static::$table_name . "(";
+            $sql .= "title, url, year, num_citations, url_pdf, url_citations, excerpt, member_id";
+            if($keywords){ $sql .= ", keywords";} // there is some keywords
+            $sql .= ") VALUES (";
+            $sql .= "'{$database->escape_value($pub->title)}', '{$database->escape_value($pub->url)}', ";
+            $sql .= "'{$database->escape_value($pub->url_pdf)}', '{$database->escape_value($pub->url_citations)}', ";
+            $sql .= "'{$database->escape_value($pub->excerpt)}', ";
+            if ($pub->year == 'None') {
+                $sql .= "'{$pub->year}', ";
             }
-        } else {
-            // Failure
-            $this->errors = "The file upload failed, propably due to incorrect permission
-                on the upload folder.";
+            else{
+                $sql .= "{$pub->year}, ";
+            }
+            $sql .= "{$pub->num_citations}, {$member_id}";
+            if($keywords){ $sql .= ", '{$keywords}'"; }
+            $sql .= ")";
+            $database->query($sql);
         }
     }
-}
 
     public static function filterSearchKeys($query){
         $query = trim(preg_replace("/(\s+)+/", " ", $query));
@@ -215,6 +239,27 @@ class Publication {
             $c++;
         }
         return $words;
+    }
+
+    public static function make_search_keys($title){
+        $title = trim($title);
+        if(mb_strlen($title) == 0) { return false; }
+        $title = trim(preg_replace("/(\s+)+/", " ", $title));
+        $words = "";
+        // expand this list with your words.
+        $list = array("in","it","a","the","of","or","I","you","he","me","us","they","she","to","but","that","this","those","then");
+        $c = 0;
+        foreach(explode(" ", $title) as $key){
+            if (in_array($key, $list)){
+                continue;
+            }
+            $words .= $key . " ";
+            if ($c >= 15){
+                break;
+            }
+            $c++;
+        }
+        return preg_replace('/[^A-Za-z0-9\-]/', ' ', $words); // remove special chars and replace with space
     }
 
     // limit words number of characters

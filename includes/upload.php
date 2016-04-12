@@ -43,7 +43,7 @@ class Upload extends DatabaseObject{
     // Pass in $_FILES['uoloaded_file'] as an argument
     public function attach_file_upload($file, $member_id, $caption){
         // if file already exists, ask either to replace, keep both or cancle.
-        if(check_existance($file, $member_id)){}
+        // if(check_existance($file, $member_id)){}
 
         // Perform error checking on the form parameters
         if(!$file || empty($file) || !is_array($file)){
