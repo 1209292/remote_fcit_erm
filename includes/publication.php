@@ -200,8 +200,9 @@ class Publication {
 
     public static function save($scholar_pub, $member_id) { // recieves from Scholar_object
         global $database;
+        $inserted_rows = [];
         foreach ($scholar_pub as $pub) {
-            $keywords = Publication::make_search_keys($pub->title);
+            $keywords = Publication::make_search_keys($pub->title); // to help us on local search
             $sql = "INSERT INTO " . static::$table_name . "(";
             $sql .= "title, url, year, num_citations, url_pdf, url_citations, excerpt, member_id";
             if($keywords){ $sql .= ", keywords";} // there is some keywords
@@ -218,8 +219,9 @@ class Publication {
             $sql .= "{$pub->num_citations}, {$member_id}";
             if($keywords){ $sql .= ", '{$keywords}'"; }
             $sql .= ")";
-            $database->query($sql);
+            if($database->query($sql)){ $inserted_rows [] = $pub; }
         }
+        return count($inserted_rows);
     }
 
     public static function filterSearchKeys($query){

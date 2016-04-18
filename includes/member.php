@@ -7,12 +7,13 @@ class Member extends DatabaseObject
     public $password;
     public $first_name;
     public $last_name;
+    public $full_name;
     public $image_file;
     public $email;
     public $description;
     public $temp_path;
     protected static $table_name = "members";
-    protected static $db_fields = array('id', 'first_name', 'last_name', 'password');
+    protected static $db_fields = array('id', 'first_name', 'last_name', 'full_name', 'password');
     public $errors=array();
     protected $upload_errors = array(
         UPLOAD_ERR_OK           => "No errors.",
@@ -29,11 +30,12 @@ class Member extends DatabaseObject
     {
     }
 
-    public static function construct_with_args($id, $password, $first_name, $last_name)
+    public static function construct_with_args($id, $password, $first_name, $last_name, $full_name)
     {
         $object = new static;
         $object->first_name = $first_name;
         $object->last_name = $last_name;
+        $object->full_name = $full_name;
         $object->password = $password;
         $object->id = $id;
         return $object;
@@ -98,7 +100,7 @@ class Member extends DatabaseObject
 
     public function create_assets($id)
     {
-        $paths = array();
+        $paths = array(); // paths of assets
         $create_checks = array();
         $paths['images'] = "C:/wamp/www/fcit_erm/public/images/";
         $paths['uploads']= "C:/wamp/www/fcit_erm/public/uploads/";

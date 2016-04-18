@@ -19,7 +19,7 @@ if(!$member){
     <div id="main">
 
         <div id="navigation">
-            <?php  include("../../includes/admin_navigation.php"); ?>
+            <?php include("../../includes/admin_navigation.php"); ?>
         </div>
 
         <div id="page">
@@ -30,6 +30,7 @@ if(!$member){
                      alt="NO IMAGE" width="150"/> </p>
             <p> First Name: <?php echo $member->first_name ?></p>
             <p> Last Name: <?php echo $member->last_name ?></p>
+            <p> Full Name: <?php echo $member->full_name ?></p>
             <p> ID: <?php echo $member->id ?></p>
             <p> Password: <?php echo $member->password ?></p>
             <p> Description: <?php echo $member->description ?></p>

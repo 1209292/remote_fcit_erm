@@ -33,7 +33,7 @@
                      <img src="../images/<?php echo $member->id ."/".$member->image_file ?>" alt="Member image"
                      width='100'/><p>Member name:  <?php echo $member->first_name ." ".
                      $member->last_name ?> </a>  <?php echo str_repeat('&nbsp', 10) ?>
-                     <a href="edit_member.php<?php $session->set_member_use($member->id); ?>">
+                     <a href="edit_member.php?member_id=<?php echo $member->id; ?>">
                      Edit member</a></p>
             <?php
             endforeach;

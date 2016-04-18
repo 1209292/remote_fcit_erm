@@ -11,18 +11,19 @@ require_once ("../../includes/functions.php");
 <?php
 if(isset($_POST["submit"])){
 
-        $first_name = $database->escape_value($_POST["first_name"]);
-        $last_name = $database->escape_value($_POST["last_name"]);
-        $id = (int) $_POST["id"];
-        $password =  $database->escape_value($_POST["password"]);
-        $discription = $database->escape_value($_POST["discription"]);
+        $first_name = $database->escape_value(trim($_POST["first_name"]));
+        $last_name = $database->escape_value(trim($_POST["last_name"]));
+        $full_name = $database->escape_value(trim($_POST["full_name"]));
+        $id = (int) trim($_POST["id"]);
+        $password =  $database->escape_value(trim($_POST["password"]));
+        $discription = $database->escape_value(trim($_POST["discription"]));
 
-        $new_member = Member::construct_with_args($id, $password, $first_name, $last_name);
-        $required_fields = array('password', 'id', 'first_name', 'last_name');
-        $max_length = array("first_name" => 10, "last_name" => 10, "id" => 9);
-        $min_length = array("first_name" => 3, "last_name" => 3, "id" => 5);
+        $new_member = Member::construct_with_args($id, $password, $first_name, $last_name, $full_name);
+        $required_fields = array('password', 'id', 'first_name', 'last_name', 'full_name');
+        $max_length = array("first_name" => 10, "last_name" => 10, "id" => 9, 'full_name' => 100);
+        $min_length = array("first_name" => 3, "last_name" => 3, "id" => 5, "full_name" => 10);
         $new_member->validate($required_fields, $max_length, $min_length);
-        $new_member->validate_password($password);
+        //$new_member->validate_password($password);
         if(!empty($new_member->errors)){
             $message = join("<br />", $new_member->errors);
         }else {
@@ -40,7 +41,7 @@ if(isset($_POST["submit"])){
                 }
                 redirect_to("manage_content.php?members=1");
             } else {
-                $session->message("Insertion Succeed");
+                $session->message("Insertion Failed");
                 redirect_to("manage_content.php?members=1");
             }
         }
@@ -67,6 +68,10 @@ if(isset($_POST["submit"])){
 		  <p>Last name:
 			<input type="text" name="last_name" value=""/>
 		  </p>
+
+             <p>Your Scholar complete name (must be same as scholar
+                 <input type="text" name="full_name" size="50" value=""/>
+             </p>
 		  
 		  <p>ID:
 			<input type="text" name="id" value=""/>

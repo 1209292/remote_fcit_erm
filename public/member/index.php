@@ -16,8 +16,9 @@ require_once ("../../includes/functions.php");
 
     <p> <img src="../images/<?php echo $member->id ."/". $member->image_file; ?>"
              alt="NO IMAGE" width="150"/> </p>
-    <p> First Name: <?php echo $member->first_name ?></p>
-    <p> Last Name: <?php echo $member->last_name ?></p>
+    <p> First Name: <?php echo $member->first_name; ?></p>
+    <p> Last Name: <?php echo $member->last_name; ?></p>
+    <p> Last Name: <?php echo $member->full_name; ?></p>
     <p> ID: <?php echo $member->id ?></p>
     <p> Password: <?php echo $member->password ?></p>
     <p> Description: <?php echo $member->description ?></p>

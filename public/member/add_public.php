@@ -9,33 +9,40 @@ require_once ("../../includes/scholar_object.php");
 <?php  $member = Member::find_by_id($session->find_id());  ?>
 <?php
 if(isset($_POST['manual_search'])) {
-    $title = $database->escape_value($_POST['title']);
+    $title = $database->escape_value(trim($_POST['title']));
     $year = $_POST['year']; // not used yet
-
-    $result_set = ScholarObject::search_by_publication_name($title, $member->id);
-    if($result_set === false) {
-        $message = "Enter a title.";
-    }elseif($result_set == 0){
-        $message = "No match for the publication title '{$title}'.";
-    }elseif($result_set == 1){
-        $message = "publication with the name '{$title}' already exists.";
-    }elseif(count($result_set) > 0){
-        $message = "publication with the title '{$title}' added to your wait list.";
-        var_dump($result_set);
+    if(mb_strlen($title) != 0){
+        $result_set = ScholarObject::search_by_publication_name($title, $member->full_name, $member->id);
+        if($result_set) {
+            $result_set = ScholarObject::already_exists_in_publications($result_set, $member->id);
+            if($result_set) {
+                $result_set = ScholarObject::save($result_set, $member->id);
+                $message = "publication with the title '{$title}' added to your wait list.";
+            }else{
+                $message = "publication with the title '{$title}' already exists.";
+            }
+        }else{
+            $message = "No match for the publication title '{$title}'.";
+        }
     }else{
-        $message = "Error: propably during form submission.";
+        $message = "You can't leave the title empty.";
     }
 }
 
 if(isset($_POST['auto_search'])) {
-    $full_name = "Rizwan Jameel Qureshi";
-    $result = ScholarObject::search($full_name, $member->id);
-    if($result == 0){
-        $message = "no results found in scholar, propably name mistype";
-    }elseif($result == 1){
-        $message = "no new pub found";
-    }elseif($result == 2){ // pub found
-        redirect_to("wait_list.php");
+    $full_name = $member->full_name;
+    $result_set = ScholarObject::search($full_name, $member->id);
+    if($result_set){
+        $result_set = ScholarObject::already_exists_in_publications($result_set, $member->id);
+        if($result_set){
+            ScholarObject::save($result_set, $member->id);
+            $num_of_pub = count($result_set);
+            $message = "{$num_of_pub} publications were added to your wait list.";
+        }else{
+            $message = "Nothing was added.";
+        }
+    }else{
+        $message = "No publications were found.";
     }
 }
 
@@ -50,7 +57,7 @@ if(isset($_POST['auto_search'])) {
 
         <form action="<?php $_SERVER['PHP_SELF']; ?>" method="POST">
             <p>Publication Title:
-                <input type="text" name="title"/>
+                <input type="text" name="title" size="150"/>
             </p>
 
             <p>Date (Enter year only)

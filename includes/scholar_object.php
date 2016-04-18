@@ -84,7 +84,7 @@ class ScholarObject{
 
     }
 
-    public static function search_by_publication_name($pub_name, $member_id){
+    public static function search_by_publication_name($pub_name, $member_full_name, $member_id){
         global $session;
         $pub_name = trim($pub_name);
         if(mb_strlen($pub_name) == 0){ return false; }
@@ -107,13 +107,7 @@ class ScholarObject{
             ];
             $new_results[] = $item;
         }
-        $new_results = static::already_exists_in_publications($new_results, $member_id);
-        if(count($new_results) == 0) {
-            return 1; // publication already exists.
-        }else {
-            $inserted_rows = ScholarObject::save_test($new_results, $member_id);
-            return $inserted_rows;
-        }
+        return (count($new_results) > 0) ? $new_results : false ;
     }
 
     public static function search($author_full_name, $member_id)
@@ -142,24 +136,7 @@ class ScholarObject{
                 ];
                 $new_results[] = $item;
             }
-//            echo "<pre>";
-//            echo print_r($new_results);
-//            echo "</pre>";
-        // var_dump($new_results);
-
-//        foreach($results as $result){  // create objects of results instead of dealing with it as array
-//            $sanitized_result [] = static::instantiate($result);
-//        }
-
-//        $new_results = static::already_exists_in_publications($new_results, $member_id);
-        if(count($new_results) == 0) {
-            return 1; // no new pub was found
-        }else {
-            static::save($new_results, $member_id);
-            return 2; // results found, go check your list to confirm or ignore
-        }
-
-
+        return (count($new_results) > 0) ? $new_results : false ;
     }
 
     public static function already_exists_in_publications($scholar_pubs, $member_id){
@@ -167,14 +144,15 @@ class ScholarObject{
         if(!$publications){ return $scholar_pubs; } // no existed publications, so return all
         foreach($scholar_pubs as $index => $value){
             foreach($publications as $publication){
-                if($scholar_pubs[$index]['title'] == $publication->title){
+                $str = strtolower($scholar_pubs[$index]['title']);
+                if($str == strtolower($publication->title)){
                     unset($scholar_pubs[$index]);
                     break;
                 }
             }
         }
         $scholar_pubs = array_values($scholar_pubs);
-        return $scholar_pubs;
+        return (count($scholar_pubs) > 0) ? $scholar_pubs : false ;
     }
 
     public static function already_exists_in_scholar($scholar_pubs, $member_id){
@@ -216,29 +194,6 @@ class ScholarObject{
 
     public static function save($results, $member_id){
         global $database;
-        foreach($results as $result) {
-            $sql = "INSERT INTO " . static::$table_name . " (";
-                $sql .= "title, url, url_pdf, url_citations, excerpt, year, num_citations, member_id";
-            $sql .= ") VALUES (";
-            $sql .= "'{$database->escape_value($result['title'])}', '{$database->escape_value($result['url'])}', ";
-            $sql .= "'{$database->escape_value($result['url_pdf'])}', '{$database->escape_value($result['url_citations'])}', ";
-            $sql .= "'{$database->escape_value($result['excerpt'])}', ";
-            // year might be 'None' or number,
-            // so we prepare the statement to prevent error in quotes ('')
-            if ($result['year'] == 'None') {
-                $sql .= "'{$result['year']}', ";
-            }
-            else{
-                $sql .= "{$result['year']}, ";
-            }
-            $sql .= "{$result['num_citations']}, {$member_id}";
-            $sql .= ")";
-            $result_set = $database->query($sql);
-        }
-    }
-
-    public static function save_test($results, $member_id){
-        global $database;
         $inserted_rows = [];
         foreach($results as $result) {
             $sql = "INSERT INTO " . static::$table_name . " (";
@@ -258,8 +213,8 @@ class ScholarObject{
             $sql .= "{$result['num_citations']}, {$member_id}";
             $sql .= ")";
             if($database->query($sql)){ $inserted_rows [] = $result; }
-            return $inserted_rows;
         }
+        return count($inserted_rows);
     }
 
     public function delete(){
@@ -274,29 +229,45 @@ class ScholarObject{
 
 }
 
-//$item = [
-//    'title'         => 'I will live my life as I want, as I imagine',
-//    'url'           => 'www.fcit.kau.edu.sa/goodSelfTalk',
-//    'year'          => '2017',
-//    'num_citations' => 'None',
-//    'url_pdf'       => 'www.it is working for me',
-//    'url_citations' => 'no pain no gain, I see success coming',
-//    'excerpt'       => 'None',
-//];
-//$results[] = $item;
-//$item = [
-//    'title'         => 'Hello World',
-//    'url'           => 'I am changing, I am stronger, I am tough, hardass',
-//    'year'          => 'None',
-//    'num_citations' => '15',
-//    'url_pdf'       => 'I don\'t care what the peaple think of me',
-//    'url_citations' => 'no pain no gain, I see success coming',
-//    'excerpt'       => 'None',
-//];
-//$results[] = $item;
-//$title = "Measuring the Effect of CMMI Quality Standard on Agile Scrum Model";
-//$result_set = ScholarObject::search_by_publication_name($title, 123147);
-////$r = ScholarObject::already_exists_in_publications($results, 123147);
+$item = [
+    'title'         => 'Novel sequence variants in the TMC1 gene in Pakistani families with autosomal recessive hearing impairment',
+    'url'           => 'www.fcit.kau.edu.sa/goodSelfTalk',
+    'year'          => '2017',
+    'num_citations' => 'None',
+    'url_pdf'       => 'www.it is working for me',
+    'url_citations' => 'no pain no gain, I see success coming',
+    'excerpt'       => 'None',
+];
+$results[] = $item;
+$item = [
+    'title'         => 'Hello World',
+    'url'           => 'I am changing, I am stronger, I am tough, hardass',
+    'year'          => 'None',
+    'num_citations' => '15',
+    'url_pdf'       => 'I don\'t care what the peaple think of me',
+    'url_citations' => 'no pain no gain, I see success coming',
+    'excerpt'       => 'None',
+];
+$results[] = $item;
+foreach($results as $index => $val){
+    if($results [$index]['title'] == 'Hello World')
+        $results [$index]['title'] = "Welcome Everyone";
+}
+var_dump($results);
+//$title = "A comprehensive study of commonly practiced heavy and light weight software methodologies";
+//$title_2 = "A Comprehensive Study of Commonly Practiced Heavy and Light Weight Software Methodologies";
+//if($title_1 == $title_2){
+//    echo "true";
+//} else{
+//    echo "false";
+//}
+//var_dump($results);
+//$result = ScholarObject::search_no_check("Asif Irshad Khan", "A comprehensive study of commonly practiced heavy and light weight software methodologies");
+//$result = ScholarObject::search_by_publication_name("A comprehensive study of commonly practiced heavy and light weight software methodologies", "Asif Irshad Khan", 111);
+//var_dump($result);
+//$result2 = ScholarObject::already_exists_in_publications($result, 123147);
+//var_dump($result2);
+//$r = ScholarObject::already_exists_in_publications($result, 123456);
 //
 //
 //
@@ -307,8 +278,7 @@ class ScholarObject{
 //}elseif($result_set == 1){
 //    echo "publication with the name  already exists.";
 //}elseif(count($result_set) > 0){
-//    echo $result_set;
+//    echo "OK.";
 //}else{
 //    echo "Error: propably during form submission.";
 //}
-

@@ -24,13 +24,18 @@ require_once ("../../includes/functions.php");
         <h2>Welcome <?php echo $member->first_name ." ".  $member->last_name ?></h2>
 <?php
         if($public_exists){
+            echo "<table>";
+            echo "<tbody>";
             foreach($publications as $publication):
 ?>
-            <p><a href="<?php echo $publication->url; ?>"><?php echo $publication->title; ?></a>
-            <?php echo str_repeat('&nbsp;', 10); ?>
-               <a href="delete_public.php?p_id=<?php echo $publication->id;?>">Delete</a> </p>
+            <tr>
+            <td><p><a href="<?php echo $publication->url; ?>"><?php echo $publication->title; ?></a></td>
+               <td><?php echo str_repeat('&nbsp;', 5); ?><a href="delete_public.php?p_id=<?php echo $publication->id;?>">Delete</a> </p></td>
+            </tr>
 <?php
                 endforeach;
+            echo "</tbody>";
+            echo "</table>";
         }
 ?>
 

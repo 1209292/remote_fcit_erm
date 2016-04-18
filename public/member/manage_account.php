@@ -10,16 +10,17 @@ require_once ("../../includes/functions.php");
 if(isset($_POST["submit"])){
 
     $current_id = $member->id; // needed for the updata SQL query (where id = ...)
-    $member->first_name = $_POST["first_name"];
-    $member->last_name = $_POST["last_name"];
-    $member->id = $_POST["id"];
-    $member->password = $_POST["password"];
-    $member->discription = $database->escape_value($_POST["discription"]);
+    $member->first_name = $database->escape_value(trim($_POST["first_name"]));
+    $member->last_name = $database->escape_value(trim($_POST["last_name"]));
+    $member->full_name = $database->escape_value(trim($_POST["full_name"]));
+    $member->id = (int) trim($_POST["id"]);
+    $member->password = $database->escape_value(trim($_POST["password"]));
+    $member->discription = $database->escape_value(trim($_POST["discription"]));
 
     // validate
-    $required_fields = array('password', 'id', 'first_name', 'last_name');
-    $max_length = array("first_name" => 10, "last_name" => 10, "id" => 9, "password" => 30);
-    $min_length = array("first_name" => 3, "last_name" => 3, "id" => 5, "password" => 6);
+    $required_fields = array('password', 'id', 'first_name', 'last_name', 'full_name');
+    $max_length = array("first_name" => 10, "last_name" => 10, "id" => 9, "password" => 30, "full_name" => 100);
+    $min_length = array("first_name" => 3, "last_name" => 3, "id" => 5, "password" => 6, "full_name" => 10);
     $member->validate($required_fields, $max_length, $min_length);
 
     if (empty($member->errors)) {
@@ -80,6 +81,10 @@ if(isset($_POST['upload_image'])){
 
             <p>Last name:
                 <input type="text" name="last_name" value="<?php echo $member->last_name; ?>"/>
+            </p>
+
+            <p>Your Scholar complete name (must be same as scholar
+                <input type="text" name="full_name" size="50" value="<?php echo $member->full_name; ?>"/>
             </p>
 
             <p>ID:
