@@ -16,7 +16,7 @@ require_once ("../../includes/upload.php");
 ?>
 
 <?php include("../layouts/member_header.php"); ?>
-<?php  if(!$session->is_logged_in()){redirect_to("../member_profile.php");} ?>
+<?php  if(!$session->is_logged_in('member')){redirect_to("../login.php");} ?>
 <?php  $member = Member::find_by_id($session->find_id());  ?>
 <?php  $uploads = Upload::find_uploads_by_member_id($member->id); ?>
 <div id="navigation">

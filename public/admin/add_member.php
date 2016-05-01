@@ -6,7 +6,7 @@ require_once ("../../includes/functions.php");
 
  ?>
 
-<?php  if(!$session->is_logged_in()){ redirect_to("../member_profile.php"); } ?>
+<?php  if(!$session->is_logged_in('admin')){ redirect_to("../login.php"); } ?>
 		
 <?php
 if(isset($_POST["submit"])){
@@ -23,10 +23,11 @@ if(isset($_POST["submit"])){
         $max_length = array("first_name" => 10, "last_name" => 10, "id" => 9, 'full_name' => 100);
         $min_length = array("first_name" => 3, "last_name" => 3, "id" => 5, "full_name" => 10);
         $new_member->validate($required_fields, $max_length, $min_length);
-        //$new_member->validate_password($password);
+        $new_member->validate_password($password);
         if(!empty($new_member->errors)){
             $message = join("<br />", $new_member->errors);
         }else {
+//            $new_member->password = password_hash($new_member->password); // default is blowfish
             $result = $new_member->create();
             $assets_folders = $new_member->create_assets($id);
             if ($result) {
@@ -80,11 +81,7 @@ if(isset($_POST["submit"])){
 		  <p>Password:
 			<input type="password" name="password" value=""/>
 		  </p>
-		  
-		  <p>Discription
-			<textarea name="discription" rows="10" cols="50">Write something here</textarea>
-			
-		  </p>
+
 			<input type="submit" name="submit" value="Add member" />
 		 </form>
 		 <br />

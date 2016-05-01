@@ -4,7 +4,7 @@ require_once ("../../includes/member.php");
 require_once ("../../includes/session.php");
 require_once ("../../includes/functions.php");
 ?>
-<?php  if(!$session->is_logged_in()){redirect_to("../member_profile.php"); } ?>
+<?php  if(!$session->is_logged_in('member')){redirect_to("../login.php"); } ?>
 <?php  $member = Member::find_by_id($session->find_id());
        $publications = Publication::find_publication_by_author($member->id);
         $public_exists = "";
@@ -29,7 +29,13 @@ require_once ("../../includes/functions.php");
             foreach($publications as $publication):
 ?>
             <tr>
-            <td><p><a href="<?php echo $publication->url; ?>"><?php echo $publication->title; ?></a></td>
+            <td>
+                <?php if($publication->url == 'None'){ ?>
+                <p><?php echo $publication->title; ?></p>
+                <?php } else {?>
+                <p><a href="../pub_info?pub<?php echo $publication->url; ?>"><?php echo $publication->title; ?></a>
+                    <?php } // else curly brace?>
+                </td>
                <td><?php echo str_repeat('&nbsp;', 5); ?><a href="delete_public.php?p_id=<?php echo $publication->id;?>">Delete</a> </p></td>
             </tr>
 <?php
@@ -41,7 +47,7 @@ require_once ("../../includes/functions.php");
 
 
 
-        <a href="add_public.php">+Add Publication Now</a>
+        <p><strong><a href="add_public.php">+Add Publication Now</a></strong></p>
 
     </div>
 <?php include("../layouts/member_footer.php"); ?>

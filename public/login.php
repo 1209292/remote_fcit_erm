@@ -8,22 +8,15 @@ require_once ("../includes/admin.php");
 
  if(isset($session->admin_id)){redirect_to("admin/manage_content.php"); }
  if(isset($session->member_id)){redirect_to("member/index.php"); }
+ if(isset($session->super_user_id)){redirect_to("super_user/dashboard.php"); }
 
 if(isset($_POST["submit"])){ // form has been submitted
     $id = trim($_POST['id']);
     $password = trim($_POST['password']);
-//    function validate($id, $pass){
-//        $sql = "SELECT * FROM admin";
-//        $sql .= " WHERE id = '{$id}'";
-//        $sql .= " AND password = '{$pass}'";
-//        $sql .= " LIMIT 1";
-//        $con = mysqli_connect("localhost", "root","j","senior_project");
-//        $result = mysqli_query($con, $sql);
-//        if($result){ return $result ; }else { false;}
-//    }
     // check database to see if username/password exists
     $found_admin = Admin::authenticate($id, $password);
     $found_member = Member::authenticate($id, $password);
+    $found_super_user = SuperUser::authenticate($id, $password);
 
     if($found_admin) {
         $session->login($found_admin);
@@ -31,6 +24,9 @@ if(isset($_POST["submit"])){ // form has been submitted
     }elseif($found_member){
         $session->login($found_member);
         redirect_to("member/index.php");
+    }elseif($found_super_user) {
+        $session->login($found_super_user);
+        redirect_to("super_user/dashboard.php");
     }else{
         // username/password combo was not found in the database
         $message = "ID/Password combination incorrect";
@@ -42,10 +38,10 @@ if(isset($_POST["submit"])){ // form has been submitted
 }
 
 ?>
-<?php //echo $_SESSION['info']; ?>
 <?php include("layouts/header.php"); ?>
 <div id="main">
     <div id="navigation">
+        <?php include ("../includes/public_navigation.php") ?>
     </div>
     <h2>Staff Login</h2>
     <?php echo output_message($message); ?>

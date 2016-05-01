@@ -2,21 +2,25 @@
 
 
 require_once "database.php";
+require_once "member.php";
 
 class Publication {
 
     public $id;
     public $title;
     public $url;
+    public $url_pdf;
+    public $url_citations;
+    public $num_citations;
+    public $excerpt;
     public $keywords;
-    public $date;
-    public $author;
-    public $citation;
+    public $year;
     public $hits;
+    public $member_id;
 
     protected static $table_name = "publications";
     protected static $db_fields = array('id', 'title', 'website', 'url', 'hits',
-        'keywords', 'date');
+        'keywords', 'year');
 
     public static function find_all(){
         return static::find_by_sql("select * from " . static::$table_name);
@@ -151,60 +155,13 @@ class Publication {
 
     }
 
-//    public function save(){
-//    // first we check if it is update image or new image
-//    if(!empty($this->old_image) && $this->old_image != "" && !is_null($this->image_file)){
-//        // update the image
-//        if($this->update_image()){
-//            return true;
-//        }
-//        else{
-//            $this->errors[] = "Your image could not be uploaded";
-//        }
-//    } else {
-//        // *** Make sure there are no errors
-//
-//        // Can't save if there are pre-existing errors
-//        if (!empty($this->errors)) {
-//            return false;
-//        }
-//
-//        // Can't save without the filename and temp location
-//        if (empty($this->image_file) || empty($this->temp_path)) {
-//            $this->errors[] = "The file location was not available.";
-//            return false;
-//        }
-//        // Determine the target path
-//        $terget_path = "C:/wamp/www/fcit_erm/public/images/" . $this->image_file;
-//        // Make sure the file is not already exists in  the target location
-//        if (file_exists($terget_path)) {
-//            $this->errors[] = "The file {$this->image_file} already exists.";
-//            return false;
-//        }
-//        // *** attemt to move the file
-//        if (move_uploaded_file($this->temp_path, $terget_path)) {
-//            //Success
-//            // Save a corresponding entry to the database
-//            if ($this->create_image()) {
-//                // we are done with temp_file, the file isn't there anymore
-//                unset($this->temp_path);
-//                return true;
-//            }
-//        } else {
-//            // Failure
-//            $this->errors = "The file upload failed, propably due to incorrect permission
-//                on the upload folder.";
-//        }
-//    }
-//}
-
     public static function save($scholar_pub, $member_id) { // recieves from Scholar_object
         global $database;
         $inserted_rows = [];
         foreach ($scholar_pub as $pub) {
             $keywords = Publication::make_search_keys($pub->title); // to help us on local search
             $sql = "INSERT INTO " . static::$table_name . "(";
-            $sql .= "title, url, year, num_citations, url_pdf, url_citations, excerpt, member_id";
+            $sql .= "title, url, url_pdf, url_citations, excerpt, year, num_citations, member_id";
             if($keywords){ $sql .= ", keywords";} // there is some keywords
             $sql .= ") VALUES (";
             $sql .= "'{$database->escape_value($pub->title)}', '{$database->escape_value($pub->url)}', ";
@@ -221,7 +178,7 @@ class Publication {
             $sql .= ")";
             if($database->query($sql)){ $inserted_rows [] = $pub; }
         }
-        return count($inserted_rows);
+        return (count($inserted_rows) > 0) ? $inserted_rows : false;
     }
 
     public static function filterSearchKeys($query){
@@ -265,7 +222,6 @@ class Publication {
     }
 
     // limit words number of characters
-
     public static function limitChars($query, $limit = 200){
         return substr($query, 0,$limit);
     }
@@ -320,23 +276,192 @@ class Publication {
         return $results;
     }
 
-    public function increment_hits(){
-
-    global $database;
-    $sql = "UPDATE " . static::$table_name;
-    $sql .= " SET hits=" .$this->hits++;
-    $sql .= " WHERE id=" . $this->id;
-    $database->query($sql);
-    return($database->affected_rows() == 1)? true : false;
-
-
-
-
-
-
+    public function hits($dump="")
+    {
+        if ($dump == "") { // this is get hits
+            return $this->hits;
+        }else{  // this is increments hits
+            global $database;
+            $sql = "UPDATE " . static::$table_name;
+            $sql .= " SET hits=" . $this->hits++;
+            $sql .= " WHERE id=" . $this->id;
+            $database->query($sql);
+            return ($database->affected_rows() == 1) ? true : false;
+    }
 }
 
+    /*** if $id provided: get top ten cited publc of $id, else get top ten cited publc ***/
+    public static function most_cited_publc_list($author_id=""){
+        global $database;
+        $returned_results = [];
+        if($author_id == ""){ // get the top ten cited publications
+            $sql = "SELECT *  FROM " . static::$table_name . " ORDER BY num_citations DESC LIMIT 10 OFFSET 0";
+            $result_set = $database->query($sql);
+            if(count($result_set) > 0){
+                foreach($result_set as $result){
+                    $returned_results[] = static::instantiate($result);
+                }
+                return $returned_results;
+            }else{
+                return false;
+            }
+        }else{ // $author givin, so get most cited publications of $author
+            $sql = "SELECT *  FROM " . static::$table_name;
+            $sql .= "  WHERE member_id= " .$author_id. " ORDER BY num_citations DESC LIMIT 10 OFFSET 0";
+            $result_set = $database->query($sql);
+            if(count($result_set) > 0){
+                foreach($result_set as $result){
+                    $returned_results[] = static::instantiate($result);
+                }
+                return $returned_results;
+            }else{
+                return false;
+            }
+        }
+    }
+
+    /*** return assoc array each index represents the publications of that index (index is a year) ***/
+    public static function author_publc_by_year($member_id){
+        global $database;
+        $returned_arr = [];
+        $publications = static::find_publication_by_author($member_id);
+        if(!$publications){return false;}
+        $start_year = 2000;
+        $end_year = date("Y" ,time());
+        for($i=$start_year; $i<=$end_year; $i++) {
+            foreach ($publications as $key => $value) {
+                if($publications[$key]->year == $i){
+                    // ["'$i'"] will save $i as string, not a number, so we don't waste space
+                    $returned_arr[$i][] = $publications[$key];
+                }
+                if($publications[$key]->year == 'None'){
+                    // ["'$i'"] will save $i as string, not a number, so we don't waste space
+                    $returned_arr[0][] = $publications[$key];
+                }
+            }
+        }
+        return $returned_arr;
+    }
+
+    // $year not provided: number of oublc in each year, else return publc only in that year
+    public static function publc_by_year($year = ""){
+        global $database;
+        $returned_arr = [];
+        if($year == "") {
+            $publications = static::find_all();
+            if (!$publications) {
+                return false;
+            }
+            $start_year = 2000;
+            $end_year = date("Y", time());
+            $count = 0;
+            for ($i = $start_year; $i <= $end_year; $i++) {
+                foreach ($publications as $key => $value) {
+                    if ($publications[$key]->year == $i) {
+                        $count++;
+                    }
+                }
+                if($count > 0){ $returned_arr[$i] = $count; }
+            }
+            return count($returned_arr) > 0 ? $returned_arr : false ;
+        }else{
+            $publications = static::find_by_sql("SELECT * FROM publications WHERE year=" . $year);
+            return count($publications) > 0 ? $publications : false ;
+        }
+    }
+
+    // top cited author
+    public static function ballondor_author_in_citation(){
+        global $database;
+        $authors = Member::find_all();
+        $winner = "";
+        $max = 0;
+        for($i=0; $i<count($authors); $i++) {
+            $cite_count = Publication::get_count_citations("member", $authors[$i]->id);
+            if($cite_count > $max){
+                $winner = $authors[$i];
+                $max = $cite_count;
+            }
+        }
+        return $winner != "" ? $winner : false;
+    }
+
+    // top publishing author
+    public static function ballondor_author_in_publc(){
+        $authors = Member::find_all();
+        $winner = "";
+        $max = 0;
+        for($i=0; $i<count($authors); $i++) {
+            $publc_count = Publication::get_num_pub($authors[$i]->id);
+            if($publc_count > $max){
+                $winner = $authors[$i];
+                $max = $publc_count;
+            }
+        }
+        return $winner != "" ? $winner : false;
+    }
+
+    // top cited publc
+    public static  function ballondor_publc(){
+        global $database;
+        $publications = Publication::find_all();
+        $winner = "";
+        $max = 0;
+        for($i=0; $i<count($publications); $i++) {
+            $cite_count = Publication::get_count_citations("publication", $publications[$i]->id);
+            if($cite_count > $max){
+                $winner = $publications[$i];
+                $max = $cite_count;
+            }
+        }
+        return $winner != "" ? $winner : false;
+    }
+
+    /* if $id not provided: number of citations of all members,
+       if $id is there and $id_type='member', get number of cit. of an author
+       if $id is there and $id_type='publication', get number of cit. of a publication
+    */
+    public static function get_count_citations($id_type = "", $id = ""){
+        global $database;
+        if($id_type == "" && $id == ""){
+            $sql = "SELECT SUM(num_citations) FROM publications";
+            $result_set = $database->query($sql);
+            $result = $database->fetch_array($result_set);
+            // $result[0] will have null if no citations existed
+            return ($result[0] != null && count($result) > 0) ? $result[0] : false;
+        }elseif($id_type == "member"){
+            $sql = "SELECT SUM(num_citations) FROM publications WHERE member_id=" . $id;
+            $result_set = $database->query($sql);
+            $result = $database->fetch_array($result_set);
+            // $result[0] will have null if no citations existed for $id
+            return ($result[0] != null && count($result) > 0) ? $result[0] : false;
+        }else{
+            $sql = "SELECT num_citations FROM publications WHERE id=" . $id;
+            $result_set = $database->query($sql);
+            $result = $database->fetch_array($result_set);
+            // $result[0] will have null if no citations existed for $id
+            return ($result[0] != null && count($result) > 0) ? $result[0] : false;
+        }
+    }
+
+    // id not provided: count of all members publications, else get pub. by author id
+    public static function get_count_publc($id = ""){
+        global $database;
+        // count return ZERO pub. id not existed
+        if($id == "") {
+            $sql = "SELECT COUNT(*) FROM publications";
+            $result = $database->query($sql);
+            $num = $database->fetch_array($result);
+            return count($num) > 0 ? $num[0] : false;
+        }else{
+            // count return ZERO if id not existed
+            $sql = "SELECT COUNT(*) FROM publications WHERE member_id=" . $id;
+            $result = $database->query($sql);
+            $num = $database->fetch_array($result);
+            return count($num) > 0 ? $num[0] : false ;
+        }
+    }
 
 }
+//var_dump(Publication::publc_by_year());
 ?>
-

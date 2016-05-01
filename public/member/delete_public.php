@@ -11,7 +11,7 @@ require_once ("../../includes/session.php");
 require_once ("../../includes/functions.php");
 require_once ("../../includes/publication.php");
 
- if(!$session->is_logged_in()){redirect_to("../member_profile.php"); }
+ if(!$session->is_logged_in('member')){redirect_to("../login.php"); }
  $member = Member::find_by_id($session->find_id());
  if(isset($_GET['p_id'])){
      /*ckecks for int only, return value on success, false on fail, null if GET not set*/

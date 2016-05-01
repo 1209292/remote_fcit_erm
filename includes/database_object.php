@@ -44,7 +44,6 @@ require_once ("session.php");
          global $database;
          $id = $database->escape_value($id);
          $password = $database->escape_value($password);
-
          $sql = "SELECT * FROM " . static::$table_name;
          $sql .= " WHERE id = '{$id}'";
          $sql .= " AND password = '{$password}'";
@@ -56,24 +55,12 @@ require_once ("session.php");
     public static function instantiate($record){
           // it is good to check $record exists and is an array
 
-          // this is a simple, long form approach to assign values
           $object = new static;
           $attributes = array();
-//        $object->id         = $record['id'];
-//        $object->password   = $record['password'];
-//        $object->first_name = $record['first_name'];
-//        $object->last_name  = $record['last_name'];
-//        $object->image_file  = $record['image_file'];
-//        $object->email  = $record['email'];
-//        $object->description  = $record['description'];
-
-
-          // more dynamic, short form approach to assign values
-          // using this class we can get public attributes
           $reflection = new ReflectionObject($object);
           $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
           foreach($properties as $property){
-              if($property->getName() == 'errors')
+              if($property->getName() == 'errors' || $property->getName() == 'upload_errors')
                   continue;
               $attributes[] = $property->getName();
           }
@@ -189,9 +176,7 @@ require_once ("session.php");
       if (!isset($password) || $password === "") {
           $errors [] = 'Password field is empty';  //exit;
       }
-      // if(preg_match("/[^\da-zA-Z]/", $password)) $errors [] = "Password has special chars";
-      if (!ctype_alnum($password)) $this->errors[] = 'Password has special character';
-      if ((strlen($password)) > 30 || (strlen($password)) < 6) $this->errors[] = 'Password must be between 8 - 15';
+      if ((strlen($password)) > 10 || (strlen($password)) < 6) $this->errors[] = 'Password must be between 8 - 15';
       if (strcspn($password, '0123456789') == strlen($password)) $this->errors[] = 'Password has NO numbers';
       if (strcspn($password, 'abcdefghijklmnopqrstuvwxyz') == strlen($password)) $this->errors[] = 'Password has NO small letters';
       if (strcspn($password, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') == strlen($password)) $this->errors[] = 'Password has NO capital letters';
@@ -350,6 +335,5 @@ require_once ("session.php");
     public static function search($query){
 
     }
-
   }
 ?>

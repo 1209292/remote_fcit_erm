@@ -1,20 +1,6 @@
 
 <?php
-class Foo {
-    public    $foo  = 1;
-    protected $bar  = 2;
-    private   $baz  = 3;
-}
-
-$foo = new Foo();
-
-$reflect = new ReflectionClass($foo);
-$props   = $reflect->getProperties(ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED);
-
-foreach ($props as $prop) {
-    print $prop->getName() . "\n";
-}
-
-var_dump($props);
-
+require_once "../includes/database.php";
+$sql = "INSERT INTO admin (id, first_name, last_name, password) VALUES (1, 'a', 'b', 'a1')";
+$database->query($sql);
 ?>

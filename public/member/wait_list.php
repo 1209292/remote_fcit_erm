@@ -12,42 +12,11 @@ require_once ("../../includes/functions.php");
 require_once ("../../includes/scholar_object.php");
 ?>
 
-<?php  if(!$session->is_logged_in()){redirect_to("../login.php"); } ?>
-<?php
-if(isset($_GET['p_id'])){ // (((temporary for testing))) delete from wait_list
-    $result = ScholarObject::find_by_id($_GET['p_id']);
-    $result->delete();
-    if($result){
-        $message = "Deleted successfully.";
-    }else{
-        $message = "Coudn't be deleted.";
-    }
-}
-?>
-<?php  $member = Member::find_by_id($session->find_id());  ?>
-<?php  $schlar_pubs = ScholarObject::find_by_author_id($member->id);?>
-<?php
-if(isset($_POST['add'])){
-   if(isset($_POST['checklist'])){
-       $checklist_ids = $_POST['checklist'];
-       $list_pubs = []; // save checked pubs in here
-        foreach($checklist_ids as $id){
-            $publication = ScholarObject::find_by_id($id);
-            $list_pubs[] = $publication;
-        }
-       $save_list = ScholarObject::already_exists_in_publications($list_pubs, $member->id);
-        if($save_list) {
-            $result_count = Publication::save($save_list, $member->id);
-            $session->message($result_count . " publication/s added to your publications");
-            redirect_to("public.php");
-        }else{
-            $message = count($save_list) . " was added";
-        }
-   } else {
-       $message = "No publication was selected";
-   }
-}
+<?php  if(!$session->is_logged_in('member')){redirect_to("../login.php");} ?>
 
+<?php  $member = Member::find_by_id($session->find_id());  ?>
+
+<?php
 if(isset($_POST['delete'])) {
     $result_count = 0 ;
     if (isset($_POST['checklist'])) {
@@ -64,7 +33,68 @@ if(isset($_POST['delete'])) {
     }
 }
 
+if(isset($_POST['delete_all'])){
+    $delete_all = ScholarObject::find_by_author_id($member->id);
+    if($delete_all){
+        $count = 0;
+        foreach($delete_all as $item){
+            $res = $item->delete();
+            if($res){
+                $count++;
+            }
+        }
+        $message = $count . " publications was deleted from your wait list";
+    }else{
+        $message = "You have no publications in your wait list to be deleted.";
+    }
+}
 ?>
+
+<?php
+if(isset($_POST['add'])){
+if(isset($_POST['checklist'])) {
+        $checklist_ids = $_POST['checklist'];
+        $list_pubs = []; // save checked pubs in here
+        foreach ($checklist_ids as $id) {
+            $publication = ScholarObject::find_by_id($id);
+            $list_pubs[] = $publication;
+        }
+        $save_list = ScholarObject::object_already_exists_in_publications($list_pubs, $member->id);
+        if ($save_list) { // publication selected not already exists, so go ahead
+            $saved_pub = Publication::save($save_list, $member->id); // save to DB
+            if ($saved_pub) {
+                var_dump($saved_pub);
+                $message = count($saved_pub) . " publication/s added to your publications";
+                foreach ($saved_pub as $pub) { // delete saved item from wait list (scholar table)
+                    $pub->delete();
+                }
+                redirect_to("public.php");
+            } else { // maybe the system is down or DB problem (something out of hands)
+                $message = "Publications selected could not be saved to your publications, please try again later";
+            }
+        }else{
+            $message = "Publication selected already exists.";
+        }
+   } else {
+       $message = "No publication was selected";
+   }
+}
+
+if(isset($_POST['add_all'])){ // add all items of wait list
+    $add_all = ScholarObject::find_by_author_id($member->id);
+    if($add_all){ // member has publications in wait list (scholar table)
+        $result = Publication::save($add_all, $member->id);
+        $session->message(count($result). " publication/s added to your publications");
+        foreach ($result as $pub) { // delete saved item from wait list
+            $pub->delete();
+        }
+        redirect_to("public.php");
+    }else{
+        $message = "You have no publications in your wait list to add.";
+    }
+}
+?>
+<?php  $schlar_pubs = ScholarObject::find_by_author_id($member->id);?>
 
 <?php include("../layouts/member_header.php"); ?>
 <div id="navigation">
@@ -72,20 +102,33 @@ if(isset($_POST['delete'])) {
 </div>
 <div id="page">
     <?php echo output_message($message); ?>
+    <?php echo count($schlar_pubs); ?>
     <form action="<?php $_SERVER['PHP_SELF']; ?>" method="post">
-        <?php if($schlar_pubs){
-            ?>
+        <?php if($schlar_pubs){ ?>
+             <table>
+                <tbody>
         <?php foreach($schlar_pubs as $pub):?>
+                    <tr>
+                        <td>
             <?php if($pub->url == 'None'){ ?>
-         <p><?php echo $pub->title; ?>
+         <p><?php echo $pub->title; ?></p>
                   <?php } else {?>
          <p><a href="<?php echo $pub->url; ?>"><?php echo htmlentities($pub->title); ?></a>
                   <?php }?>
+                        </td>
+                        <td>
             <input type="checkbox" name="checklist[]" value="<?php echo $pub->id; ?>">
+                        </td>
         </p>
+                    </tr>
         <?php endforeach; ?>
+                </tbody>
+            </table>
+
         <input type="submit" name="add" value="Add">
         <input type="submit" name="delete" value="Delete">
+        <input type="submit" name="add_all" value="Add All">
+        <input type="submit" name="delete_all" value="Delete All">
         <?php } else{ echo "<p>Your wait list is empty.</p>"; } ?>
     </form>
 

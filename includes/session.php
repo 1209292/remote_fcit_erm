@@ -6,14 +6,16 @@
 
 require_once("member.php");
 require_once("admin.php");
+require_once("super_user.php");
 class Session{
 
     private $member_logged_in = false;
     private $admin_logged_in = false;
+    private $super_user_logged_in = false;
     public $admin_id;
+    public $super_user_id;
     public $member_id;
     public $message;
-    public $member_use = null;
 
     function __construct()
     {
@@ -22,9 +24,14 @@ class Session{
         $this->check_login();
     }
 
-    public function is_logged_in(){
-        if($this->member_id != 0) return $this->member_logged_in;
-        elseif($this->admin_id != 0) return $this->admin_logged_in;
+    public function is_logged_in($user_type=""){
+        if($user_type == "member") {
+            return $this->member_id != 0 ? true : false ;
+        } elseif ($user_type == "admin") {
+            return $this->admin_id != 0 ? true : false ;
+            } elseif ($user_type == "super_user"){
+            return $this->super_user_id != 0 ? true : false ;
+        } else {   return false;  }
     }
 
     public function find_id(){
@@ -32,19 +39,21 @@ class Session{
             return $this->member_id;
         }elseif($this->admin_logged_in){
             return $this->admin_id;
-        }else{
-            // Do nothing
-        }
+        }elseif($this->super_user_logged_in){
+            return $this->super_user_id;
+        }else{ return false; }
     }
 
     public function login($user){
         // DB should find user based on username/password
         if($user){
             if(is_a($user, "Member")){$this->member_id = $_SESSION['member_id'] = $user->id;  }
-            elseif(is_a($user, "Admin")){ $this->admin_id = $_SESSION['admin_id'] = $user->id;}
+            elseif(is_a($user, "Admin")){ $this->admin_id = $_SESSION['admin_id'] = $user->id; }
+            elseif(is_a($user, "SuperUser")){ $this->super_user_id = $_SESSION['super_user_id'] = $user->id; }
             else{
                 $this->member_id = 0;
                 $this->admin_id = 0;
+                $this->super_user_id = 0;
                 $this->message("This is session class");
             }
         }
@@ -59,6 +68,10 @@ class Session{
             unset($_SESSION['admin_id']);
             unset($this->admin_id);
             $this->admin_logged_in = false;
+        }elseif($this->super_user_id){
+            unset($_SESSION['super_user_id']);
+            unset($this->super_user_id);
+            $this->super_user_logged_in = false;
         }else{
             // Do nothing
             $this->message("This is session class");
@@ -73,11 +86,16 @@ class Session{
         }elseif(isset($_SESSION['admin_id'])){
             $this->admin_id = $_SESSION['admin_id'];
             $this->admin_logged_in = true;
+        }elseif(isset($_SESSION['super_user_id'])){
+            $this->super_user_id = $_SESSION['super_user_id'];
+            $this->super_user_logged_in = true;
         }else{
             unset($this->member_id);
             unset($this->admin_id);
+            unset($this->super_user_id);
             $this->member_logged_in = false;
             $this->admin_logged_in = false;
+            $this->super_user_logged_in = false;
         }
     }
 
@@ -105,12 +123,6 @@ class Session{
 
     public function set_member_use($member_id){
         $this->member_use = $member_id;
-    }
-
-    public function get_member_use(){
-        $member_id = $this->member_use;
-        unset($this->member_use);
-        return $member_id;
     }
 }
 

@@ -6,7 +6,7 @@ require_once ("../../includes/session.php");
 require_once ("../../includes/functions.php");
 ?>
 
-<?php  if(!$session->is_logged_in()){redirect_to("../member_profile.php"); } ?>
+<?php  if(!$session->is_logged_in('admin')){ redirect_to("../login.php"); } ?>
 <?php
 			if($_GET["member_id"]){
 			$member = Member::find_by_id($_GET["member_id"]);

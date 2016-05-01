@@ -6,9 +6,9 @@ require_once ("../../includes/session.php");
 require_once ("../../includes/functions.php");
 require_once ("../../includes/admin.php");
 
-if(!$session->is_logged_in()){redirect_to("manage_content.php"); }
+if(!$session->is_logged_in('admin')){ redirect_to("../login.php"); }
 
-if(!isset($_GET['member_id'])) { redirect_to("all_profiles.php"); }
+if(!isset($_GET['member_id'])) { redirect_to("manage_content.php"); }
 $member = Member::find_by_id($_GET['member_id']);
 if(!$member){
     $session->message("Not able to find member with the id: ". $_GET['member_id']);

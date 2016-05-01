@@ -24,10 +24,13 @@ a:hover {color: #1A446C; }
     background: #EEE4B9;
 }
 #footer {
-    clear: both;
-    height: 2em; margin: 0; padding: 1em;
-    text-align: center;
+    clear: both;  width: 100%;
+    height: 10px;  position: absolute;
+    margin: 0;  padding: 1em;
+    text-align: center;  bottom: 0;
+    left:0;
     background: #1A446C; color: #D4E6F4;
+    position: fixed; bottom: 0px
 }
 
 /*Navigation */
@@ -59,3 +62,4 @@ div.message {
     color: #8D0D19; font-weight: bold;
     margin: 1em 0; padding: 1em;
 }
+#pagination .selected { font-weight: bold; color: #8D0D19; }

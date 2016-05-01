@@ -7,7 +7,7 @@
  require_once ("../../includes/admin.php");
 ?>
 
-<?php  if(!$session->is_logged_in()){ redirect_to("../member_profile.php"); } ?>
+<?php  if(!$session->is_logged_in('admin')){ redirect_to("../login.php"); } ?>
 <?php include("../layouts/admin_header.php"); ?>
 
 <div id="main">
@@ -56,12 +56,38 @@
             echo "<p><a href=\"add_admin.php\"> + Add Admin</a></p>";
         }else{
             echo "Error: No Records in members' table.";
+            echo "<p><a href=\"add_admin.php\"> + Add Admin</a></p>";
         }
-        }else {
-         echo "<h2>Welcome</h2>";
-         echo "<h6> FCIT ERM</h6>";
+        }elseif(isset($_GET["super_user"])) {
+
+        echo "<h2>Super user of FCIT</h2>";
+        echo output_message($message);
+        $super_users = SuperUser::find_all();
+        if ($super_users && count($super_users) > 0) {
+            echo "<ul>";
+            foreach ($super_users as $user):?>
+
+                <p><a href="">
+                        <p>user name:  <?php echo $user->first_name ." ".
+                        $user->last_name ?> </a>  <?php echo str_repeat('&nbsp', 10) ?>
+                    <a href="edit_super_user.php?super_user_id=<?php echo $user->id; ?>">
+                        Edit user</a></p>
+
+            <?php endforeach;
+            echo "</ul>";
+            echo "<p><a href=\"add_super_user.php\"> + Add Super User</a></p>";
+
+        } else {
+            echo "<h2>No Super User found</h2>";
+            echo "<p><a href=\"add_super_user.php\"> + Add Super User</a></p>";
         }
-     ?>
+    }
+        else {
+            echo "<h2>Welcome</h2>";
+            echo "<h6> FCIT ERM</h6>";
+        }
+
+         ?>
 
     </div>
 </div>
