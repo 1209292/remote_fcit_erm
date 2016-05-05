@@ -30,7 +30,7 @@ if(!$super_user){
             <p> Last Name: <?php echo $super_user->last_name ?></p>
             <p> ID: <?php echo $super_user->id ?></p>
 
-            <a href="delete_super_user.php?super_user_id=<?php echo $super_user->id; ?>" onclick="confirm('Are you sure?')">Delete</a>
+            <a href="delete_super_user.php?super_user_id=<?php echo $super_user->id; ?>" onclick="return confirm('Are you sure?')">Delete</a>
         </div>
     </div>
     </div>

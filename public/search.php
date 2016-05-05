@@ -71,21 +71,25 @@ if(isset($_POST['submit'])){
             if($member_search_done){
                 echo "<span>";
                 foreach($member_set as $member):
-                    echo "<p><img src='images/{$this->id}/{$member->image_file}' alt='No image' width='150'/>";
-                    echo "<a href=''> $member->first_name  $member->last_name</a> ";
+                    echo "<p><img src='images/{$member->id}/{$member->image_file}' alt='No image' width='150'/></p>";
+                    echo "<p><a href='member_profile.php?member_id={$member->id}'> $member->first_name  $member->last_name</a></p>";
                 endforeach;
                 echo "<span>";
             }
             if($upload_search_done) {
                 foreach ($upload_set as $upload):
                     $member = Member::find_by_id($upload->member_id);
-                    echo "<p><a href='uploads/$upload->filename '> $upload->filename </a> ";
+                    echo "<p><a href='uploads/$upload->filename '> $upload->filename </a>";
                     echo "Author Name: " . $member->first_name . " " . $member->last_name . "</p>";
                 endforeach;
             }
             if($public_search_done){
                 foreach($public_set as $public):
-                    echo "<a href='$public->url'> $public->title <a/>";
+                    if($public->url != 'None') {
+                        echo "<p><a href='$public->url'> $public->title <a/></p>";
+                    }else{
+                        echo "<p> $public->title <p/>";
+                    }
                     endforeach;
             }
         }

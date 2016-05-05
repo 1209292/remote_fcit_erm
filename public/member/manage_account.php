@@ -39,15 +39,20 @@ if(isset($_POST["submit"])){
 }
 
 if(isset($_POST['upload_image'])){
-    $member->attach_file($_FILES['file_upload']);
-    if($member->save()){
-        // Success
-        $session->message("Photograph uploaded successfully");
-        redirect_to("index.php");
+    $result = $member->attach_file($_FILES['file_upload']);
+    if($result){
+        if($member->save()){
+            // Success
+            $session->message("Photograph uploaded successfully");
+            redirect_to("index.php");
+        }else{
+            // Failure
+            $message = join("<br />", $member->errors);
+        }
     }else{
-        // Failure
-        $message = join("<br />", $member->errors);
+        $message = "Uploaded file is not an image";
     }
+
 }
 ?>
 <?php include("../layouts/member_header.php"); ?>
@@ -96,10 +101,6 @@ if(isset($_POST['upload_image'])){
                 <input type="password" name="password" value="<?php echo $member->password;?>"/>
             </p>
 
-            <p>Description
-                <textarea name="discription" rows="10" cols="50">Write something here</textarea>
-
-            </p>
             <input type="submit" name="submit" value="Edit member" />
         </form>
         <br />

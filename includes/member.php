@@ -120,8 +120,11 @@ class Member extends DatabaseObject
         we do with images/$member_id folder*/
         $images_path = $_SERVER['DOCUMENT_ROOT'] . "fcit_erm/public/images/" .
             $id ."/";
-        return rmdir($images_path) ? true : false;
+        $result = static::deleteDir($images_path);
+        return $result;
     }
+
+
 
     public function destroy(){
         // **This function remove the physical file

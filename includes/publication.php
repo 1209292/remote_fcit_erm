@@ -22,8 +22,13 @@ class Publication {
     protected static $db_fields = array('id', 'title', 'website', 'url', 'hits',
         'keywords', 'year');
 
-    public static function find_all(){
-        return static::find_by_sql("select * from " . static::$table_name);
+    public static function find_all($per_page=0, $offset=0){
+        if($per_page==0 && $offset==0 ){
+            return static::find_by_sql("select * from " . static::$table_name);
+        }else {
+            return static::find_by_sql("select * from " . static::$table_name
+                . " ORDER BY hits DESC LIMIT {$per_page} OFFSET {$offset}");
+        }
     }
 
     public static function find_by_id($id=0){
@@ -36,8 +41,12 @@ class Publication {
      * @param int $id
      * @return bool|mixed
      */
-    public static function find_publication_by_author($id=0){
-        $result_array = static::find_by_sql("select * from ". static::$table_name ." where member_id ={$id}");
+    public static function find_publication_by_author($id=0, $per_page=0, $offset=0){
+        if($per_page == 0 && $offset == 0){
+            $result_array = static::find_by_sql("SELECT * FROM " . static::$table_name . " WHERE member_id ={$id}");
+        }else {
+            $result_array = static::find_by_sql("SELECT * FROM " . static::$table_name . " WHERE member_id ={$id} LIMIT {$per_page} OFFSET {$offset}");
+        }
         // if $result_array empty, then return false, else get the item out of $result_array and return it
         return !empty($result_array)? $result_array : false;
     }
@@ -55,6 +64,22 @@ class Publication {
     public static function count_all(){
         global $database;
         $sql= "SELECT COUNT(*) FROM " .static::$table_name;
+        /* find_by_sql isn't gonna work for us cuz it does instantiate & return object
+        we don't want that, we just want the count, so we're gonna run the query using $database*/
+        $result_set = $database->query($sql);
+        /* the query will return a record even though it was a single value, so we need to fetch
+        // the first row from the $result_ser*/
+        $row = $database->fetch_array($result_set);
+        /* even though the record has a single value, but we need to pull it out since it
+        // is the first value in the record*/
+        return array_shift($row);
+
+    }
+
+    /**** used in pagination ****/
+    public static function count_all_by_author($id){
+        global $database;
+        $sql= "SELECT COUNT(*) FROM " .static::$table_name . " where member_id = $id";
         /* find_by_sql isn't gonna work for us cuz it does instantiate & return object
         we don't want that, we just want the count, so we're gonna run the query using $database*/
         $result_set = $database->query($sql);
@@ -320,11 +345,40 @@ class Publication {
         }
     }
 
+    public static function most_visited_publc_list($author_id=""){
+        global $database;
+        $returned_results = [];
+        if($author_id == ""){ // get the top ten cited publications
+            $sql = "SELECT *  FROM " . static::$table_name . " ORDER BY hits DESC LIMIT 10 OFFSET 0";
+            $result_set = $database->query($sql);
+            if(count($result_set) > 0){
+                foreach($result_set as $result){
+                    $returned_results[] = static::instantiate($result);
+                }
+                return $returned_results;
+            }else{
+                return false;
+            }
+        }else{ // $author givin, so get most cited publications of $author
+            $sql = "SELECT *  FROM " . static::$table_name;
+            $sql .= "  WHERE member_id= " .$author_id. " ORDER BY hits DESC LIMIT 10 OFFSET 0";
+            $result_set = $database->query($sql);
+            if(count($result_set) > 0){
+                foreach($result_set as $result){
+                    $returned_results[] = static::instantiate($result);
+                }
+                return $returned_results;
+            }else{
+                return false;
+            }
+        }
+    }
+
     /*** return assoc array each index represents the publications of that index (index is a year) ***/
     public static function author_publc_by_year($member_id){
         global $database;
         $returned_arr = [];
-        $publications = static::find_publication_by_author($member_id);
+        $publications = static::find_publication_by_author($member_id, 0, 0);
         if(!$publications){return false;}
         $start_year = 2000;
         $end_year = date("Y" ,time());
@@ -348,7 +402,7 @@ class Publication {
         global $database;
         $returned_arr = [];
         if($year == "") {
-            $publications = static::find_all();
+            $publications = static::find_all(0, 0);
             if (!$publications) {
                 return false;
             }
@@ -392,7 +446,7 @@ class Publication {
         $winner = "";
         $max = 0;
         for($i=0; $i<count($authors); $i++) {
-            $publc_count = Publication::get_num_pub($authors[$i]->id);
+            $publc_count = Publication::get_count_publc($authors[$i]->id);
             if($publc_count > $max){
                 $winner = $authors[$i];
                 $max = $publc_count;
@@ -404,7 +458,7 @@ class Publication {
     // top cited publc
     public static  function ballondor_publc(){
         global $database;
-        $publications = Publication::find_all();
+        $publications = Publication::find_all(0, 0);
         $winner = "";
         $max = 0;
         for($i=0; $i<count($publications); $i++) {

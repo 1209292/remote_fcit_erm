@@ -12,7 +12,7 @@ if(isset($_POST['manual_search'])) {
     $title = $database->escape_value(trim($_POST['title']));
     $year = $_POST['year']; // not used yet
     if(mb_strlen($title) != 0){
-        $result_set = ScholarObject::search_by_publication_name($title, $member->full_name, $member->id);
+        $result_set = ScholarObject::my_search($member->full_name, $title);
         if($result_set) {
             $result_set = ScholarObject::already_exists_in_publications($result_set, $member->id);
             if($result_set) {
@@ -25,7 +25,7 @@ if(isset($_POST['manual_search'])) {
                         if($result === true){$count_x++;} // add counter_x if save returns true
                     }
                     if($count_x > 0) { // if we have saved more than ZERO publications
-                        $message = count($count_x) . " publications were added to your wait list.";
+                        $message = $count_x . " publications were added to your wait list.";
                     }else{
                         $message = "System was not able to save your publications, please try again later.";
                     }
@@ -57,7 +57,7 @@ if(isset($_POST['auto_search'])) {
                 if($result === true){$count_x++;} // add counter_x if save returns true
             }
             if($count_x > 0) { // if we have saved more than ZERO publications
-                $message = count($count_x) . " publications were added to your wait list.";
+                $message = $count_x . " publications were added to your wait list.";
             }else{
                 $message = "System was not able to save your publications, please try again later.";
             }

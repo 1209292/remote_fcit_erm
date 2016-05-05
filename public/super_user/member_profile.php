@@ -23,12 +23,23 @@ if ( filter_var($_GET['member_id'], FILTER_VALIDATE_INT , array("min_range"=>1,"
 $member = Member::find_by_id($_GET['member_id']);
 $pub_found = false;
 if($member){ //check if member exists
-    $publications = Publication::author_publc_by_year($member->id);
-    $uploads = Upload::find_uploads_by_member_id($member->id);
+    $all_publications = Publication::count_all_by_author($member->id);
+    $all_uploads = Upload::count_all_by_author($member->id);
 }else{
     $session->message("Not able to find member with the id: ". $_GET['member_id'] . ", please select a member.");
     redirect_to("all_profiles.php");
 }
+// ****************** pagination section ********************* prepare everything
+$page = !empty($_GET['page']) ? (int) $_GET['page'] : 1;
+$per_page = 15;
+$total_count = Publication::count_all_by_author($member->id);
+$pagination = new Pagination($page, $per_page, $total_count);
+$publications = Publication::find_publication_by_author($member->id, $per_page, $pagination->offset());
+$per_page = 10;
+$total_count = Upload::count_all_by_author($member->id);
+$uploads_pagination = new Pagination($page, $per_page, $total_count);
+$uploads = Upload::find_uploads_by_member_id($member->id, $per_page, $uploads_pagination->offset());
+// ************************ pagination section  *****************
 ?>
 
     <?php include("../layouts/member_header.php"); ?>
@@ -36,7 +47,7 @@ if($member){ //check if member exists
     <div id="main">
 
         <div id="navigation">
-            <?php  include("../../includes/public_navigation.php"); ?>
+            <?php  include("../../includes/super_user_navigation.php"); ?>
         </div>
 
         <div id="page">
@@ -50,68 +61,121 @@ if($member){ //check if member exists
             <p> ID: <?php echo $member->id ?></p>
             <p> number of citations: <?php echo Publication::get_count_citations("member", $member->id); ?></p>
             <p> number of publications: <?php echo Publication::get_count_publc($member->id); ?></p>
+            <p>Number of uploads: <?php echo $all_uploads; ?></p>
+            <p>Publishing years: <?php echo join(' ', array_keys(Publication::author_publc_by_year($member->id))); ?></p>
+
+            <p><a href="member_profile.php?member_id=<?php echo $member->id?>&publications=true">Publications</a>
+                <?php echo str_repeat('&nbsp', 15);?>
+                <a href="member_profile.php?member_id=<?php echo $member->id?>&uploads=true">uploads</a>
+            </p>
             <?php
-            if($publications) {
-                echo "<table>";
-                echo "<tbody>";
-                echo "<tr>
-                    <th>Publications</th>
-                </tr>";
-                foreach ($publications as $year => $index) {
-                    echo "<tr><td><p>Publications of {$year}</p></td></tr>";
-                    foreach ($index as $publication) {
+            if(isset($_GET['publications']) && $_GET['publications'] == true) {
+                if ($all_publications == 0) {
+                    echo "<h2>No Publications</h2>";
+                } else {
+                    echo "<table>";
+                    echo "<tbody>";
+                    foreach ($publications as $publication):
                         ?>
                         <tr>
                             <td>
                                 <p>
-                                    <a href="../pub_info.php?member_id=<?php echo $member->id; ?>&pub_id=<?php echo $publication->id; ?>"><?php echo $publication->title; ?></a>
+                                    <a href="pub_info.php?member_id=<?php echo $member->id; ?>&pub_id=<?php echo $publication->id; ?>"><?php echo $publication->title; ?></a>
                             </td>
                         </tr>
                         <?php
-                    }
-                }
-                echo "</tbody>";
-                echo "</table>";
-            }else{ echo "<h2>No Publications</h2>"; }
-            ?>
-<!--            --><?php
-//            if($publications){
-//                echo "<table>";
-//                echo "<tbody>";
-//                foreach($publications as $key):
-//                    ?>
-<!--                    <tr>-->
-<!--                        <td>-->
-<!--                            <p><a href="../pub_info.php?member_id=--><?php //echo $member->id;?><!--&pub_id=--><?php //echo $publication->id;?><!--">--><?php //echo $publication->title; ?><!--</a>-->
-<!--                        </td>-->
-<!--                    </tr>-->
-<!--                    --><?php
-//                endforeach;
-//                echo "</tbody>";
-//                echo "</table>";
-//            }else{ echo "<h2>No Publications</h2>"; }
-            ?>
-            <?php
-            if($uploads){
-                echo "<table>";
-                echo "<tbody>";
-                echo "<tr>
-                    <th>Uploads</th>
-                </tr>";
-                foreach($uploads as $upload):
+                    endforeach;
+                    echo "</tbody>";
+                    echo "</table>";
                     ?>
-                    <tr>
-                        <td>
-                            <p title="file_name=<?php echo $upload->filename; ?>"><a href="../uploads/<?php
-                                echo htmlentities($upload->member_id)
-                                    ."/".$upload->filename; ?>"> <?php  echo $upload->filename; ?></a></p>
-                        </td>
-                    </tr>
+
+
+                    <!-- ********** Pagination Part -->
+                    <p>
+                    <div id="pagination" style="clear: both;">
+                        <?php if($pagination->total_pages() > 1){
+                            if($pagination->has_previous_page()){
+                                echo "<a href=\"member_profile.php?member_id={$member->id}&page=";
+                                echo $pagination->previous_page();
+                                echo "&publications=true";
+                                echo "\">&laquo Previous</a>";
+                            }
+
+                            for($i = 1; $i <= $pagination->total_pages(); $i++){
+                                if($i == $page){
+                                    echo "<span class='selected'>{$i}</span>";
+                                }else {
+                                    echo " <a href='member_profile.php?member_id={$member->id}&page={$i}&publications=true'>{$i}</a> ";
+                                }
+                            }
+
+                            if($pagination->has_next_page()){
+                                echo "<a href=\"member_profile.php?member_id={$member->id}&page=";
+                                echo $pagination->next_page();
+                                echo "&publications=true";
+                                echo "\">Next &raquo</a>";
+                            }
+
+                        }
+                        ?>
+                    </div></p>
                     <?php
-                endforeach;
-                echo "</tbody>";
-                echo "</table>";
-            } else { echo "<h2>No Uploads</h2>"; }
+                }
+            } // curly brace of ---> if(isset($_GET['publications']) && $_GET['publications'] == true)
+            elseif(isset($_GET['uploads']) && $_GET['uploads'] == true) {
+                if ($all_uploads == 0) {
+                    echo "<h2>No Uploads</h2>";
+                } else {
+                    echo "<table>";
+                    echo "<tbody>";
+                    foreach ($uploads as $upload):
+                        ?>
+                        <tr>
+                            <td>
+                                <p title="file_name=<?php echo $upload->filename; ?>"><a href="uploads/<?php
+                                    echo htmlentities($upload->member_id)
+                                        . "/" . $upload->filename; ?>"> <?php echo $upload->filename; ?></a></p>
+                            </td>
+                        </tr>
+                        <?php
+                    endforeach;
+                    echo "</tbody>";
+                    echo "</table>";
+                    ?>
+
+
+                    <!-- ********** Pagination Part -->
+                    <p>
+                    <div id="pagination" style="clear: both;">
+                        <?php if($uploads_pagination->total_pages() > 1){
+                            if($uploads_pagination->has_previous_page()){
+                                echo "<a href=\"member_profile.php?member_id={$member->id}&page=";
+                                echo $pagination->previous_page();
+                                echo "&uploads=true";
+                                echo "\">&laquo Previous</a>";
+                            }
+
+                            for($i = 1; $i <= $uploads_pagination->total_pages(); $i++){
+                                if($i == $page){
+                                    echo "<span class='selected'>{$i}</span>";
+                                }else {
+                                    echo " <a href='member_profile.php?member_id={$member->id}&page={$i}&uploads=true'>{$i}</a> ";
+                                }
+                            }
+
+                            if($uploads_pagination->has_next_page()){
+                                echo "<a href=\"member_profile.php?member_id={$member->id}&page=";
+                                echo $uploads_pagination->next_page();
+                                echo "&uploads=true";
+                                echo "\">Next &raquo</a>";
+                            }
+
+                        }
+                        ?>
+                    </div></p>
+
+                <?php           }
+            }  // curly brace of ---> if(isset($_GET['uploads']) && $_GET['uploads'] == true)
             ?>
 
         </div>

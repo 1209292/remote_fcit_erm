@@ -184,6 +184,7 @@ require_once ("session.php");
 
     public function attach_file($file){
           // Perform error checking on the form parameters
+            $info = getimagesize($file['tmp_name']);
           if(!$file || empty($file) || !is_array($file)){
               // error: nothing uploaded or wrong argument usage
               $this->errors[] = "No file was uploaded.";
@@ -192,7 +193,10 @@ require_once ("session.php");
               // error: report what PHP says went wrong
               $this->errors[] = $this->upload_errors[$file['error']];
               return false;
-          }else {
+          }elseif(($info[2] !== IMAGETYPE_GIF) && ($info[2] !== IMAGETYPE_JPEG) && ($info[2] !== IMAGETYPE_PNG)) {
+              $this->errors[] = "The file uploaded is not an image.";
+              return false;
+          }else{
               // Set object attributes to the form parameters.
               $this->old_image = $this->image_file;
               $this->temp_path = $file['tmp_name'];
@@ -266,6 +270,24 @@ require_once ("session.php");
                 on the upload folder.";
               }
           }
+
+      public static function deleteDir($dirPath) {
+          if (! is_dir($dirPath)) {
+              return false;
+          }
+          if (substr($dirPath, strlen($dirPath) - 1, 1) != '/') {
+              $dirPath .= '/';
+          }
+          $files = glob($dirPath . '*', GLOB_MARK);
+          foreach ($files as $file) {
+              if (is_dir($file)) {
+                  static::deleteDir($file);
+              } else {
+                  unlink($file);
+              }
+          }
+          rmdir($dirPath);
+      }
 
     public function create_image(){
         global $database;

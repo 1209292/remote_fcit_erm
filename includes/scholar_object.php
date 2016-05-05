@@ -36,9 +36,14 @@ class ScholarObject
         return !empty($result_array) ? array_shift($result_array) : false;
     }
 
-    public static function find_by_author_id($id)
+    public static function find_by_author_id($id, $per_page=0, $offset=0)
     {
-        $result_array = static::find_by_sql("select * from " . static::$table_name . " where member_id ={$id}");
+        if($per_page==0 && $offset==0){
+            $result_array = static::find_by_sql("select * from " . static::$table_name . " where member_id ={$id}");
+        }else {
+            $result_array = static::find_by_sql("select * from " . static::$table_name . " where member_id ={$id}"
+                . " LIMIT {$per_page} OFFSET {$offset}");
+        }
         // if $result_array empty, then return false, else get the item out of $result_array and return it
         return !empty($result_array) ? $result_array : false;
     }
@@ -75,6 +80,37 @@ class ScholarObject
         return $object;
     }
 
+    public static function count_all(){
+        global $database;
+        $sql= "SELECT COUNT(*) FROM " .static::$table_name;
+        /* find_by_sql isn't gonna work for us cuz it does instantiate & return object
+        we don't want that, we just want the count, so we're gonna run the query using $database*/
+        $result_set = $database->query($sql);
+        /* the query will return a record even though it was a single value, so we need to fetch
+        // the first row from the $result_ser*/
+        $row = $database->fetch_array($result_set);
+        /* even though the record has a single value, but we need to pull it out since it
+        // is the first value in the record*/
+        return array_shift($row);
+
+    }
+
+    /**** used in pagination ****/
+    public static function count_all_by_author($id){
+        global $database;
+        $sql= "SELECT COUNT(*) FROM " .static::$table_name . " where member_id = $id";
+        /* find_by_sql isn't gonna work for us cuz it does instantiate & return object
+        we don't want that, we just want the count, so we're gonna run the query using $database*/
+        $result_set = $database->query($sql);
+        /* the query will return a record even though it was a single value, so we need to fetch
+        // the first row from the $result_ser*/
+        $row = $database->fetch_array($result_set);
+        /* even though the record has a single value, but we need to pull it out since it
+        // is the first value in the record*/
+        return array_shift($row);
+
+    }
+
     // after search obtain results, we need to instantiate temporary object so we can use them around
     public static function initial_object($scholar_object)
     {
@@ -97,7 +133,7 @@ class ScholarObject
         if (mb_strlen($pub_name) == 0) {
             return false;
         }
-        exec("c:/python27/python.exe c:/wamp/www/scholar-test/scholar.py -p \"{$pub_name}\" -t --csv", $results);
+        exec("c:/python34/python.exe c:/wamp/www/scholar-test/scholar.py -p \"{$pub_name}\" -t --csv", $results);
         if (count($results) == 0) {
             return 0; //No match
         }
@@ -122,6 +158,44 @@ class ScholarObject
         return (count($new_results) > 0) ? $new_results : false;
     }
 
+    public static function my_search($author_full_name, $publ_name="")
+    {
+        $result = array();
+        if($publ_name == "") {
+            exec("c:/python34/python.exe " . __DIR__ . "/my_api.py \"" . $author_full_name . "\"", $result);
+        }else{
+            exec("c:/python34/python.exe " . __DIR__ . "/my_api_by_name.py \"" . $author_full_name . "\" \"".$publ_name."\"", $result);
+        }
+        $new_results = [];
+        $count = count($result); // so we can loop through each one, and if get to $count, we break from loop
+        for ($j = 0; $j < $count; ++$j) {
+            $q = explode("|", $result[$j]); // each pub in --csv is separated by (|), so we use it as delemeter
+            if (filter_var($q[1], FILTER_VALIDATE_INT)) {
+                $item = [
+                    'title' => $q[0],
+                    'num_citations' => $q[1],
+                    'year' => $q[2],
+                    'url' => $q[4],
+                    'url_pdf' => 'None',
+                    'url_citations' => $q[3],
+                    'excerpt' => 'None',
+                ];
+            } else {
+                $item = [
+                    'title' => $q[0],
+                    'num_citations' => 0,
+                    'year' => $q[2],
+                    'url' => $q[4],
+                    'url_pdf' => 'None',
+                    'url_citations' => 'None',
+                    'excerpt' => 'None',
+                ];
+            }
+            $new_results[] = $item;
+        }
+        return (count($new_results) > 0) ? $new_results : false;
+    }
+
     // api search
     public static function search($author_full_name)
     {
@@ -129,7 +203,7 @@ class ScholarObject
         $start_date = 2003;
         $end_date = date("Y", time());
         for ($i = $start_date; $i <= $end_date; $i++) { //search from srart_date to end_date
-            exec("c:/python27/python.exe c:/wamp/www/scholar-test/scholar.py -a \"{$author_full_name}\" --after={$i} --before={$i} --csv", $results);
+            exec("c:/python34/python.exe c:/wamp/www/scholar-test/scholar.py -a \"{$author_full_name}\" --after={$i} --before={$i} --csv", $results);
             sleep(rand(1, 4)); // used to not be abanded by google
         }
         $new_results = [];
@@ -145,39 +219,6 @@ class ScholarObject
                 'url_citations' => $q[7],
                 'excerpt' => $q[10],
             ];
-            $new_results[] = $item;
-        }
-        return (count($new_results) > 0) ? $new_results : false;
-    }
-
-    public static function my_search($author_full_name)
-    {
-        exec("", $result);
-        $new_results = [];
-        $count = count($result); // so we can loop through each one, and if get to $count, we break from loop
-        for ($j = 0; $j < $count; ++$j) {
-            $q = explode("|", $result[$j]); // each pub in --csv is separated by (|), so we use it as delemeter
-            if (filter_var($q[1], FILTER_VALIDATE_INT)) {
-                $item = [
-                    'title' => $q[0],
-                    'num_citations' => $q[1],
-                    'year' => $q[2],
-                    'url' => 'None',
-                    'url_pdf' => 'None',
-                    'url_citations' => 'None',
-                    'excerpt' => 'None',
-                ];
-            } else {
-                $item = [
-                    'title' => $q[0],
-                    'num_citations' => 0,
-                    'year' => $q[2],
-                    'url' => 'None',
-                    'url_pdf' => 'None',
-                    'url_citations' => 'None',
-                    'excerpt' => 'None',
-                ];
-            }
             $new_results[] = $item;
         }
         return (count($new_results) > 0) ? $new_results : false;
@@ -201,7 +242,7 @@ class ScholarObject
 
     // in case we hava an array and we wanna compare with publications (e.g. add_public.php in case of 'add_manually' or 'add_automatically'
     public static function already_exists_in_publications($scholar_pubs, $member_id){
-        $publications = Publication::find_publication_by_author($member_id);
+        $publications = Publication::find_publication_by_author($member_id, 0, 0);
         if(!$publications){ return $scholar_pubs; } // no existed publications, so return all
         foreach($scholar_pubs as $index => $value){
             foreach($publications as $publication){
@@ -304,9 +345,8 @@ class ScholarObject
 //        $database->query($sql);
 //        return ($database->affected_rows() == 1)? true : false;
 //    }
-
 }
-
+/*
 //$item = [
 //    'title'         => 'Novel sequence variants in the TMC1 gene in Pakistani families with autosomal recessive hearing impairment',
 //    'url'           => 'www.fcit.kau.edu.sa/goodSelfTalk',
@@ -365,3 +405,4 @@ class ScholarObject
 //}else{
 //    echo "Error: propably during form submission.";
 //}
+*/

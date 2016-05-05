@@ -33,7 +33,6 @@ if(!$member){
             <p> Full Name: <?php echo $member->full_name ?></p>
             <p> ID: <?php echo $member->id ?></p>
             <p> Password: <?php echo $member->password ?></p>
-            <p> Description: <?php echo $member->description ?></p>
             <p> Messing: Publications & uploads & info about them</p>
 
         </div>

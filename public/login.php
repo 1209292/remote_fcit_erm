@@ -5,10 +5,11 @@ require_once ("../includes/member.php");
 require_once ("../includes/session.php");
 require_once ("../includes/functions.php");
 require_once ("../includes/admin.php");
+require_once ("../includes/search_thread.php");
 
- if(isset($session->admin_id)){redirect_to("admin/manage_content.php"); }
- if(isset($session->member_id)){redirect_to("member/index.php"); }
- if(isset($session->super_user_id)){redirect_to("super_user/dashboard.php"); }
+if($session->is_logged_in('super_user')){redirect_to("super_user/dashboard.php"); }
+if($session->is_logged_in('admin')){redirect_to("admin/manage_content.php"); }
+if($session->is_logged_in('member')){redirect_to("member/index.php"); }
 
 if(isset($_POST["submit"])){ // form has been submitted
     $id = trim($_POST['id']);
@@ -23,6 +24,8 @@ if(isset($_POST["submit"])){ // form has been submitted
         redirect_to("admin/manage_content.php");
     }elseif($found_member){
         $session->login($found_member);
+//        $thread = new SearchThread($found_member->full_name, $found_member->id);
+//        $thread->start();
         redirect_to("member/index.php");
     }elseif($found_super_user) {
         $session->login($found_super_user);

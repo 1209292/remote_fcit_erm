@@ -26,11 +26,11 @@ class Session{
 
     public function is_logged_in($user_type=""){
         if($user_type == "member") {
-            return $this->member_id != 0 ? true : false ;
+            return isset($this->member_id) ? true : false ;
         } elseif ($user_type == "admin") {
-            return $this->admin_id != 0 ? true : false ;
+            return isset($this->admin_id) ? true : false ;
             } elseif ($user_type == "super_user"){
-            return $this->super_user_id != 0 ? true : false ;
+            return isset($this->super_user_id) ? true : false ;
         } else {   return false;  }
     }
 

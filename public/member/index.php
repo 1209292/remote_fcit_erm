@@ -20,8 +20,5 @@ require_once ("../../includes/functions.php");
     <p> Last Name: <?php echo $member->last_name; ?></p>
     <p> Last Name: <?php echo $member->full_name; ?></p>
     <p> ID: <?php echo $member->id ?></p>
-    <p> Password: <?php echo $member->password ?></p>
-    <p> Description: <?php echo $member->description ?></p>
-    <p> Email: <?php echo $member->email ?></p>
     </div>
 <?php include("../layouts/member_footer.php"); ?>

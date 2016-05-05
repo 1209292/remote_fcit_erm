@@ -34,7 +34,7 @@ if(isset($_POST['delete'])) {
 }
 
 if(isset($_POST['delete_all'])){
-    $delete_all = ScholarObject::find_by_author_id($member->id);
+    $delete_all = ScholarObject::find_by_author_id($member->id, 0, 0);
     if($delete_all){
         $count = 0;
         foreach($delete_all as $item){
@@ -63,7 +63,6 @@ if(isset($_POST['checklist'])) {
         if ($save_list) { // publication selected not already exists, so go ahead
             $saved_pub = Publication::save($save_list, $member->id); // save to DB
             if ($saved_pub) {
-                var_dump($saved_pub);
                 $message = count($saved_pub) . " publication/s added to your publications";
                 foreach ($saved_pub as $pub) { // delete saved item from wait list (scholar table)
                     $pub->delete();
@@ -81,7 +80,7 @@ if(isset($_POST['checklist'])) {
 }
 
 if(isset($_POST['add_all'])){ // add all items of wait list
-    $add_all = ScholarObject::find_by_author_id($member->id);
+    $add_all = ScholarObject::find_by_author_id($member->id, 0, 0);
     if($add_all){ // member has publications in wait list (scholar table)
         $result = Publication::save($add_all, $member->id);
         $session->message(count($result). " publication/s added to your publications");
@@ -94,7 +93,13 @@ if(isset($_POST['add_all'])){ // add all items of wait list
     }
 }
 ?>
-<?php  $schlar_pubs = ScholarObject::find_by_author_id($member->id);?>
+<?php
+$page = !empty($_GET['page']) ? (int) $_GET['page'] : 1;
+$per_page = 20;
+$total_count = ScholarObject::count_all_by_author($member->id);
+$pagination = new Pagination($page, $per_page, $total_count);
+$schlar_pubs = ScholarObject::find_by_author_id($member->id, $per_page, $pagination->offset());
+?>
 
 <?php include("../layouts/member_header.php"); ?>
 <div id="navigation">
@@ -102,7 +107,6 @@ if(isset($_POST['add_all'])){ // add all items of wait list
 </div>
 <div id="page">
     <?php echo output_message($message); ?>
-    <?php echo count($schlar_pubs); ?>
     <form action="<?php $_SERVER['PHP_SELF']; ?>" method="post">
         <?php if($schlar_pubs){ ?>
              <table>
@@ -131,6 +135,34 @@ if(isset($_POST['add_all'])){ // add all items of wait list
         <input type="submit" name="delete_all" value="Delete All">
         <?php } else{ echo "<p>Your wait list is empty.</p>"; } ?>
     </form>
+
+    <!-- ********** Pagination Part -->
+    <p>
+    <div id="pagination" style="clear: both;">
+        <?php if($pagination->total_pages() > 1){
+            if($pagination->has_previous_page()){
+                echo "<a href=\"wait_list.php?page=";
+                echo $pagination->previous_page();
+                echo "\">&laquo Previous</a>";
+            }
+
+            for($i = 1; $i <= $pagination->total_pages(); $i++){
+                if($i == $page){
+                    echo "<span class='selected'>{$i}</span>";
+                }else {
+                    echo " <a href='wait_list.php?page={$i}'>{$i}</a> ";
+                }
+            }
+
+            if($pagination->has_next_page()){
+                echo "<a href=\"wait_list.php?page=";
+                echo $pagination->next_page();
+                echo "\">Next &raquo</a>";
+            }
+
+        }
+        ?>
+    </div></p>
 
 </div>
 <?php include("../layouts/member_footer.php"); ?>

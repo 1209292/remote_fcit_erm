@@ -6,6 +6,6 @@
 </head>
 <body>
 <div id="header">
-    <h1>Perfection</h1>
+    <h1>FCIT Electronic Resource Management</h1>
 </div>
 <div id="main">

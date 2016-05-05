@@ -13,9 +13,6 @@ require_once ("../../includes/functions.php");
 			$result = $member->delete();
 			if($result && $database->affected_rows() == 1){
 				$message = "Deletion Succeed";
-                if(!$member->destroy_assets($_GET["member_id"])){
-                    $message .= ", BUT physical files could not be deleted";
-                }
                 $session->message($message);
 				redirect_to("manage_content.php?members=1");
 			} else {

@@ -40,6 +40,26 @@ class Upload extends DatabaseObject{
 
     }
 
+    public static function uploads_find_all($per_page, $offset){
+        return static::find_by_sql("select * from " . static::$table_name. " LIMIT {$per_page} OFFSET {$offset}");
+    }
+
+    /**** used in pagination ****/
+    public static function count_all_by_author($id){
+        global $database;
+        $sql= "SELECT COUNT(*) FROM " .static::$table_name . " where member_id = $id";
+        /* find_by_sql isn't gonna work for us cuz it does instantiate & return object
+        we don't want that, we just want the count, so we're gonna run the query using $database*/
+        $result_set = $database->query($sql);
+        /* the query will return a record even though it was a single value, so we need to fetch
+        // the first row from the $result_ser*/
+        $row = $database->fetch_array($result_set);
+        /* even though the record has a single value, but we need to pull it out since it
+        // is the first value in the record*/
+        return array_shift($row);
+
+    }
+
     // Pass in $_FILES['uoloaded_file'] as an argument
     public function attach_file_upload($file, $member_id, $caption){
         // if file already exists, ask either to replace, keep both or cancle.
@@ -121,9 +141,16 @@ class Upload extends DatabaseObject{
             $target_path = "C:/wamp/www/fcit_erm/public/uploads/" .
                 $this->member_id . "/" . $this->filename;
             return unlink($target_path) ? true : false;
+}
 
+    public static function destroy_assets($id){
 
-
+        /*For now we going to delete uploads/$member_id folder only, until we see what
+        we do with images/$member_id folder*/
+        $uploads_path = $_SERVER['DOCUMENT_ROOT'] . "fcit_erm/public/uploads/" .
+            $id ."/";
+        $result = static::deleteDir($uploads_path);
+        return $result;
     }
 
     //image_path() return image path
@@ -162,10 +189,15 @@ class Upload extends DatabaseObject{
         }
     }
 
-    public static function find_uploads_by_member_id($id=0){
+    public static function find_uploads_by_member_id($id=0, $per_page=0, $offset=0){
         global $database;
-        $result_array = static::find_by_sql("SELECT * FROM ". static::$table_name ." WHERE member_id =
-        {$database->escape_value($id)}");
+        if($per_page==0 && $offset==0){
+            $result_array = static::find_by_sql("SELECT * FROM " . static::$table_name . " WHERE member_id="
+                ."{$database->escape_value($id)}");
+        }else {
+            $result_array = static::find_by_sql("SELECT * FROM " . static::$table_name . " WHERE member_id="
+            ."{$database->escape_value($id)} LIMIT {$per_page} OFFSET {$offset}");
+        }
         // if $result_array empty, then return false, else get the item out of $result_array and return it
         return !empty($result_array)? $result_array : false;
     }

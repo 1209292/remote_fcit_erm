@@ -16,7 +16,6 @@ if(isset($_POST["submit"])){
         $full_name = $database->escape_value(trim($_POST["full_name"]));
         $id = (int) trim($_POST["id"]);
         $password =  $database->escape_value(trim($_POST["password"]));
-        $discription = $database->escape_value(trim($_POST["discription"]));
 
         $new_member = Member::construct_with_args($id, $password, $first_name, $last_name, $full_name);
         $required_fields = array('password', 'id', 'first_name', 'last_name', 'full_name');
@@ -54,7 +53,7 @@ if(isset($_POST["submit"])){
     <div id="main">
 <div id="navigation">
  <!-- we could embedd the code here, but we choose to make navigation function (find it in ) better to have a look on it -->
- 
+    <?php include "../../includes/admin_navigation.php"; ?>
 	
 </div>
 		<div id="page">

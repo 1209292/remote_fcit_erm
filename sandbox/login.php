@@ -3,29 +3,20 @@
 	<head>
 	</head>
 	<body>
-	
-		<form action="process.php" method="POST">
-			<label>username:
-				<input type="text" name="username" />
-			</label>
-			<br>
-			<label>Password:
-				<input type="password" name="pass" />
-			</label>
-			
-			<br>
-			<input type="submit" value="submit">
-		
-		</form>
-		
-		<?php
-		session_start();
-		echo $_SESSION['username'].'<br>';
-		echo $_SESSION['password'].'<br>';
-		
-		unset($_SESSION['username']);
-		?>
-		
-	
+    <h2>This is AJAX</h2>
+	<div id="update"></div>
 	</body>
+    <script>
+       // object of XMLHttpRequest();
+            var req = new XMLHttpRequest();
+       // open request
+            req.open('GET', 'ajax.txt');
+            req.onreadystatechange = function(){
+                if(req.status == 200 && req.readyState == 4) {
+                    document.getElementById("update").innerHTML = req.responseText;
+                }
+            };
+      // send data
+        req.send();
+    </script>
 </html>

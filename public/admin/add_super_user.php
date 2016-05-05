@@ -22,7 +22,7 @@ if(isset($_POST["submit"])){
     $max_length = array("first_name" => 10, "last_name" => 10, "id" => 9);
     $min_length = array("first_name" => 3, "last_name" => 3, "id" => 5);
     $new_super_user->validate($required_fields, $max_length, $min_length);
-    $new_member->validate_password($password);
+    $new_super_user->validate_password($password);
     if(!empty($new_super_user->errors)){
         $message = join("<br />", $new_super_user->errors);
     }else {
